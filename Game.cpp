@@ -166,6 +166,7 @@ void Game::CreateGeometry()
 	XMFLOAT4 red	= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4 green	= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 blue	= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 yellow	= XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
@@ -181,9 +182,28 @@ void Game::CreateGeometry()
 	//    since we're describing the triangle in terms of the window itself
 	Vertex vertices[] =
 	{
+		//Triangle
 		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
 		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
 		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
+
+		//Square
+		{ XMFLOAT3(-0.75f, +0.75f, +0.0f), red }, //top left (3)
+		{ XMFLOAT3(-0.75f, +0.25f, +0.0f), green }, //bottom left (4)
+		{ XMFLOAT3(-0.5f, +0.75f, +0.0f), blue }, //top right (5)
+		{ XMFLOAT3(-0.5f, +0.25f, +0.0f), red }, //bottom right (6)
+
+		//Star
+		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), yellow }, //(7)
+		{ XMFLOAT3(+0.65f, +0.5f, +0.0f), yellow }, //(8)
+		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), yellow }, //(9)
+		{ XMFLOAT3(+0.75f, +0.5f, +0.0f), yellow }, //(10)
+		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), yellow }, //(11)
+		{ XMFLOAT3(+0.775f, +0.4f, +0.0f), yellow }, //(12)
+		{ XMFLOAT3(+0.825f, +0.2f, +0.0f), yellow }, //(13)
+		{ XMFLOAT3(+0.7f, +0.3f, +0.0f), yellow }, //(14)
+		{ XMFLOAT3(+0.575f, +0.2f, +0.0f), yellow }, //(15)
+		{ XMFLOAT3(+0.625f, +0.4f, +0.0f), yellow }, //(16)
 	};
 
 	// Set up indices, which tell us which vertices to use and in which order
@@ -191,61 +211,36 @@ void Game::CreateGeometry()
 	// - Indices are technically not required if the vertices are in the buffer 
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
-	unsigned int indices[] = { 0, 1, 2 };
+	unsigned int indices[] = {
+		//Triangle
+		0, 1, 2,
+
+		//Square
+		3, 5, 6,
+		3, 6, 4,
+
+		//Star
+		7, 8, 16,
+		8, 9, 10,
+		10, 11, 12,
+		12, 13, 14,
+		14, 15, 16,
+		8, 10, 16,
+		10, 14, 16,
+		10, 12, 14
+	};
 
 
-	// Create a VERTEX BUFFER
-	// - This holds the vertex data of triangles for a single object
-	// - This buffer is created on the GPU, which is where the data needs to
-	//    be if we want the GPU to act on it (as in: draw it to the screen)
-	{
-		// First, we need to describe the buffer we want Direct3D to make on the GPU
-		//  - Note that this variable is created on the stack since we only need it once
-		//  - After the buffer is created, this description variable is unnecessary
-		D3D11_BUFFER_DESC vbd	= {};
-		vbd.Usage				= D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		vbd.ByteWidth			= sizeof(Vertex) * 3;       // 3 = number of vertices in the buffer
-		vbd.BindFlags			= D3D11_BIND_VERTEX_BUFFER; // Tells Direct3D this is a vertex buffer
-		vbd.CPUAccessFlags		= 0;	// Note: We cannot access the data from C++ (this is good)
-		vbd.MiscFlags			= 0;
-		vbd.StructureByteStride = 0;
-
-		// Create the proper struct to hold the initial vertex data
-		// - This is how we initially fill the buffer with data
-		// - Essentially, we're specifying a pointer to the data to copy
-		D3D11_SUBRESOURCE_DATA initialVertexData = {};
-		initialVertexData.pSysMem = vertices; // pSysMem = Pointer to System Memory
-
-		// Actually create the buffer on the GPU with the initial data
-		// - Once we do this, we'll NEVER CHANGE DATA IN THE BUFFER AGAIN
-		device->CreateBuffer(&vbd, &initialVertexData, vertexBuffer.GetAddressOf());
-	}
-
-	// Create an INDEX BUFFER
-	// - This holds indices to elements in the vertex buffer
-	// - This is most useful when vertices are shared among neighboring triangles
-	// - This buffer is created on the GPU, which is where the data needs to
-	//    be if we want the GPU to act on it (as in: draw it to the screen)
-	{
-		// Describe the buffer, as we did above, with two major differences
-		//  - Byte Width (3 unsigned integers vs. 3 whole vertices)
-		//  - Bind Flag (used as an index buffer instead of a vertex buffer) 
-		D3D11_BUFFER_DESC ibd	= {};
-		ibd.Usage				= D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		ibd.ByteWidth			= sizeof(unsigned int) * 3;	// 3 = number of indices in the buffer
-		ibd.BindFlags			= D3D11_BIND_INDEX_BUFFER;	// Tells Direct3D this is an index buffer
-		ibd.CPUAccessFlags		= 0;	// Note: We cannot access the data from C++ (this is good)
-		ibd.MiscFlags			= 0;
-		ibd.StructureByteStride = 0;
-
-		// Specify the initial data for this buffer, similar to above
-		D3D11_SUBRESOURCE_DATA initialIndexData = {};
-		initialIndexData.pSysMem = indices; // pSysMem = Pointer to System Memory
-
-		// Actually create the buffer with the initial data
-		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-		device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
-	}
+	meshes.push_back(
+		std::make_shared<Mesh>(
+			vertices,
+			sizeof(vertices) / sizeof(Vertex),
+			indices,
+			sizeof(indices) / sizeof(unsigned int),
+			device,
+			context
+			)
+	);
 }
 
 
@@ -287,30 +282,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// DRAW geometry
-	// - These steps are generally repeated for EACH object you draw
-	// - Other Direct3D calls will also be necessary to do more complex things
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	{
-		// Set buffers in the input assembler (IA) stage
-		//  - Do this ONCE PER OBJECT, since each object may have different geometry
-		//  - For this demo, this step *could* simply be done once during Init()
-		//  - However, this needs to be done between EACH DrawIndexed() call
-		//     when drawing different geometry, so it's here as an example
-		context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-		context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-		// Tell Direct3D to draw
-		//  - Begins the rendering pipeline on the GPU
-		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all currently set Direct3D resources (shaders, buffers, etc)
-		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-		//     vertices in the currently set VERTEX BUFFER
-		context->DrawIndexed(
-			3,     // The number of indices to use (we could draw a subset if we wanted)
-			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
+	for (std::shared_ptr<Mesh> mesh : meshes) {
+		mesh->Draw();
 	}
 
 	// Frame END
