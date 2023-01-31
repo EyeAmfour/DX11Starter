@@ -48,23 +48,41 @@ Mesh::Mesh(
 
 	CreateVertexBuffer(vertices, numVerts, device);
 	CreateIndexBuffer(indices, device);
+
+	meshTint = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	meshOffset = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
 
 Mesh::~Mesh() {
 }
 
+/// <summary>
+/// Gets the Vertex Buffer
+/// </summary>
+/// <returns>A CompPtr to the Vertex Buffer</returns>
 Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetVertexBuffer() {
 	return vertexBuffer;
 }
 
+/// <summary>
+/// Gets the Index Buffer
+/// </summary>
+/// <returns>A CompPtr to the Index Buffer</returns>
 Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer() {
 	return indexBuffer;
 }
 
+/// <summary>
+/// Gets the number of indices in the index array
+/// </summary>
+/// <returns>The number of indices in the index array</returns>
 int Mesh::GetIndexCount() {
 	return numIndices;
 }
 
+/// <summary>
+/// Draws the Mesh using the vertex and index buffers
+/// </summary>
 void Mesh::Draw() {
 	// Draw geometries
 	UINT stride = sizeof(Vertex);

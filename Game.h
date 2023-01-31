@@ -29,6 +29,14 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders(); 
 	void CreateGeometry();
+	void UpdateGui(float deltaTime);
+
+	//ImGui Window Creation Methods
+	void CreateWindowInfoGui();
+	void CreateMeshGui();
+
+	//Constant Buffer Helper
+	void UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT3 offset);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -38,6 +46,7 @@ private:
 	// Buffers to hold actual geometry data
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 	
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;

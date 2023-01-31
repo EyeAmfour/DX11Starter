@@ -17,6 +17,7 @@ private:
 	//Number of indices in the index buffer
 	int numIndices;
 
+
 	void CreateVertexBuffer(Vertex* vertices, int numVerts, Microsoft::WRL::ComPtr<ID3D11Device> device);
 	void CreateIndexBuffer(unsigned int* indices, Microsoft::WRL::ComPtr<ID3D11Device> device);
 
@@ -39,6 +40,10 @@ public:
 
 	//Gets the Index Buffer
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer();
+
+	//Mesh Property Variables
+	DirectX::XMFLOAT4 meshTint;
+	DirectX::XMFLOAT3 meshOffset;
 
 	//Gets the number of indicies in the index buffer
 	int GetIndexCount();

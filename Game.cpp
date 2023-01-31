@@ -2,6 +2,12 @@
 #include "Vertex.h"
 #include "Input.h"
 #include "Helpers.h"
+#include "BufferStructs.h"
+
+//ImGui imports
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -39,28 +45,31 @@ Game::Game(HINSTANCE hInstance)
 //  - Delete all objects manually created within this class
 //  - Release() all Direct3D objects created within this class
 // --------------------------------------------------------
-Game::~Game()
-{
+Game::~Game() {
 	// Call delete or delete[] on any objects or arrays you've
 	// created using new or new[] within this class
 	// - Note: this is unnecessary if using smart pointers
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
+
+	//ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 // --------------------------------------------------------
 // Called once per program, after Direct3D and the window
 // are initialized but before the game loop.
 // --------------------------------------------------------
-void Game::Init()
-{
+void Game::Init() {
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
-	
+
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -82,6 +91,30 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(device.Get(), context.Get());
+
+	// Pick a style (uncomment one of these 3)
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+	//ImGui::StyleColorsClassic();
+	
+	// Get size as the next multiple of 16 (instead of hardcoding a size here!)
+	unsigned int size = sizeof(VertexShaderExternalData);
+	size = (size + 15) / 16 * 16; // This will work even if the struct size changes
+
+	// Describe the constant buffer
+	D3D11_BUFFER_DESC cbDesc = {}; // Sets struct to all zeros
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = size; // Must be a multiple of 16
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
 }
 
 // --------------------------------------------------------
@@ -92,8 +125,7 @@ void Game::Init()
 //    be verified against vertex shader byte code
 // - We'll have that byte code already loaded below
 // --------------------------------------------------------
-void Game::LoadShaders()
-{
+void Game::LoadShaders() {
 	// BLOBs (or Binary Large OBjects) for reading raw data from external files
 	// - This is a simplified way of handling big chunks of external data
 	// - Literally just a big array of bytes read from a file
@@ -159,14 +191,13 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 // Creates the geometry we're going to draw - a single triangle for now
 // --------------------------------------------------------
-void Game::CreateGeometry()
-{
+void Game::CreateGeometry() {
 	// Create some temporary variables to represent colors
 	// - Not necessary, just makes things more readable
-	XMFLOAT4 red	= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green	= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue	= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 yellow	= XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 yellow = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
@@ -180,30 +211,35 @@ void Game::CreateGeometry()
 	//    knowing the exact size (in pixels) of the image/window/etc.  
 	// - Long story short: Resizing the window also resizes the triangle,
 	//    since we're describing the triangle in terms of the window itself
-	Vertex vertices[] =
-	{
-		//Triangle
+	
+	//Triangle
+	Vertex triangleVerts[] = {
 		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
 		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
 		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
+	};
 
-		//Square
-		{ XMFLOAT3(-0.75f, +0.75f, +0.0f), red }, //top left (3)
-		{ XMFLOAT3(-0.75f, +0.25f, +0.0f), green }, //bottom left (4)
-		{ XMFLOAT3(-0.5f, +0.75f, +0.0f), blue }, //top right (5)
-		{ XMFLOAT3(-0.5f, +0.25f, +0.0f), red }, //bottom right (6)
+	//Square
+	Vertex squareVerts[] = {
+		{ XMFLOAT3(-0.75f, +0.75f, +0.0f), red }, //top left (0)
+		{ XMFLOAT3(-0.75f, +0.25f, +0.0f), green }, //bottom left (1)
+		{ XMFLOAT3(-0.5f, +0.75f, +0.0f), blue }, //top right (2)
+		{ XMFLOAT3(-0.5f, +0.25f, +0.0f), red }, //bottom right (3)
+	};
 
-		//Star
-		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), yellow }, //(7)
-		{ XMFLOAT3(+0.65f, +0.5f, +0.0f), yellow }, //(8)
-		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), yellow }, //(9)
-		{ XMFLOAT3(+0.75f, +0.5f, +0.0f), yellow }, //(10)
-		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), yellow }, //(11)
-		{ XMFLOAT3(+0.775f, +0.4f, +0.0f), yellow }, //(12)
-		{ XMFLOAT3(+0.825f, +0.2f, +0.0f), yellow }, //(13)
-		{ XMFLOAT3(+0.7f, +0.3f, +0.0f), yellow }, //(14)
-		{ XMFLOAT3(+0.575f, +0.2f, +0.0f), yellow }, //(15)
-		{ XMFLOAT3(+0.625f, +0.4f, +0.0f), yellow }, //(16)
+	//Star
+	Vertex starVerts[] =
+	{
+		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), yellow }, //(0)
+		{ XMFLOAT3(+0.65f, +0.5f, +0.0f), yellow }, //(1)
+		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), yellow }, //(2)
+		{ XMFLOAT3(+0.75f, +0.5f, +0.0f), yellow }, //(3)
+		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), yellow }, //(4)
+		{ XMFLOAT3(+0.775f, +0.4f, +0.0f), yellow }, //(5)
+		{ XMFLOAT3(+0.825f, +0.2f, +0.0f), yellow }, //(6)
+		{ XMFLOAT3(+0.7f, +0.3f, +0.0f), yellow }, //(7)
+		{ XMFLOAT3(+0.575f, +0.2f, +0.0f), yellow }, //(8)
+		{ XMFLOAT3(+0.625f, +0.4f, +0.0f), yellow }, //(9)
 	};
 
 	// Set up indices, which tell us which vertices to use and in which order
@@ -211,35 +247,65 @@ void Game::CreateGeometry()
 	// - Indices are technically not required if the vertices are in the buffer 
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
-	unsigned int indices[] = {
-		//Triangle
+
+	//Triangle
+	unsigned int triangleIndices[] = {
 		0, 1, 2,
-
-		//Square
-		3, 5, 6,
-		3, 6, 4,
-
-		//Star
-		7, 8, 16,
-		8, 9, 10,
-		10, 11, 12,
-		12, 13, 14,
-		14, 15, 16,
-		8, 10, 16,
-		10, 14, 16,
-		10, 12, 14
+	};
+	
+	//Square
+	unsigned int squareIndices[] = {
+		0, 2, 3,
+		0, 3, 1,
 	};
 
+	//Star
+	unsigned int starIndices[] = {	
+		0, 1, 9,
+		1, 2, 3,
+		3, 4, 5,
+		5, 6, 7,
+		7, 8, 9,
+		1, 3, 9,
+		3, 7, 9,
+		3, 5, 7
+	};
 
+	//Create Mesh smart pointers in the meshes vector
+	//Add the Triangle Mesh
 	meshes.push_back(
 		std::make_shared<Mesh>(
-			vertices,
-			sizeof(vertices) / sizeof(Vertex),
-			indices,
-			sizeof(indices) / sizeof(unsigned int),
+			triangleVerts,
+			sizeof(triangleVerts) / sizeof(Vertex),
+			triangleIndices,
+			sizeof(triangleIndices) / sizeof(unsigned int),
 			device,
 			context
-			)
+		)
+	);
+
+	//Add the Square Mesh
+	meshes.push_back(
+		std::make_shared<Mesh>(
+			squareVerts,
+			sizeof(squareVerts) / sizeof(Vertex),
+			squareIndices,
+			sizeof(squareIndices) / sizeof(unsigned int),
+			device,
+			context
+		)
+	);
+
+	//Add the Star Mesh
+	meshes.push_back(
+		std::make_shared<Mesh>(
+			starVerts,
+			sizeof(starVerts) / sizeof(Vertex),
+			starIndices,
+			sizeof(starIndices) / sizeof(unsigned int),
+			device,
+			context
+		)
 	);
 }
 
@@ -249,8 +315,7 @@ void Game::CreateGeometry()
 //  - DXCore needs to resize the back buffer
 //  - Eventually, we'll want to update our 3D camera
 // --------------------------------------------------------
-void Game::OnResize()
-{
+void Game::OnResize() {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 }
@@ -258,18 +323,132 @@ void Game::OnResize()
 // --------------------------------------------------------
 // Update your game here - user input, move objects, AI, etc.
 // --------------------------------------------------------
-void Game::Update(float deltaTime, float totalTime)
-{
+void Game::Update(float deltaTime, float totalTime) {
+	//Update ImGui
+	UpdateGui(deltaTime);
+
+	CreateWindowInfoGui();
+	CreateMeshGui();
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
 }
 
 // --------------------------------------------------------
+// Update ImGui
+// --------------------------------------------------------
+void Game::UpdateGui(float deltaTime) {
+	// Feed fresh input data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)this->windowWidth;
+	io.DisplaySize.y = (float)this->windowHeight;
+
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// Determine new input capture
+	Input& input = Input::GetInstance();
+	input.SetKeyboardCapture(io.WantCaptureKeyboard);
+	input.SetMouseCapture(io.WantCaptureMouse);
+
+	// Show the demo window
+	//ImGui::ShowDemoWindow();
+}
+
+void Game::CreateWindowInfoGui() {
+	ImGui::Begin("Program Information");
+
+	//Display window dimensions
+	ImGui::Text("Window Dimensions: %ux%u", windowWidth, windowHeight);
+
+	//Display FPS
+	ImGui::Text("FPS: %u", ImGui::GetIO().Framerate);
+
+	//List of items in dropdown.
+	//Cannot be deleted or manipulated, and will not cause memory leak
+	//(https://stackoverflow.com/questions/2001286/const-char-s-in-c#:~:text=It%20cannot%20be%20deleted%2C%20and%20should%20not%20be%20manipulated.)
+
+	//Deciding against this dropdown for now, will revisit later
+	/*
+	const char* items[] = { "Unlimited", "30", "60", "120", "144" };
+
+	static int currentItem = 0;
+
+	ImGui::Combo("FPS Limit", &currentItem, items, IM_ARRAYSIZE(items));
+	*/
+
+	//Create VSync Checkbox
+	ImGui::Checkbox("VSync", &vsync);
+
+	//Create Title Bar Stats Update Checkbox
+	ImGui::Checkbox("Update Title Bar Stats", &titleBarStats);
+
+	ImGui::End();
+}
+
+// --------------------------------------------------------
+// Create Mesh Gui
+// --------------------------------------------------------
+void Game::CreateMeshGui() {
+	ImGui::Begin("Mesh Properties");
+
+	//Create the root node
+	if (ImGui::TreeNode("Meshes")) {
+		int index = 0;
+		//Loop through each mesh and made a node for it with child properties
+		for (std::shared_ptr<Mesh> mesh : meshes) {
+			if (ImGui::TreeNode((void*)(intptr_t)index, "Mesh %d", index)) {
+				ImGui::DragFloat4("Mesh Tint", &mesh->meshTint.x, 0.005f, 0.0f, 1.0f);
+				ImGui::DragFloat3("Mesh Offset", &mesh->meshOffset.x, 0.005f);
+				ImGui::TreePop();
+			}
+
+			index++;
+		}
+		ImGui::TreePop();
+	}
+
+	ImGui::End();
+}
+
+// --------------------------------------------------------
+// Update the Constant Buffer
+// --------------------------------------------------------
+void Game::UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT3 offset) {
+	//Create local instance of struct to hold data
+	VertexShaderExternalData vsData;
+	//vsData.colorTint = XMFLOAT4(0.1f, 0.9f, 0.3f, 1.0f);
+	//vsData.offset = XMFLOAT3(0.15f, -0.3f, 0.0f);
+	vsData.colorTint = tint;
+	vsData.offset = offset;
+
+	//Write data to constant buffer
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+
+	//Lock buffer
+	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+	//Copy data over
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+	//Unlock buffer
+	context->Unmap(vsConstantBuffer.Get(), 0);
+
+	//Bind the constant buffer
+	context->VSSetConstantBuffers(
+		0, // Which slot (register) to bind the buffer to?
+		1, // How many are we activating? Can do multiple at once
+		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
+}
+
+// --------------------------------------------------------
 // Clear the screen, redraw everything, present to the user
 // --------------------------------------------------------
-void Game::Draw(float deltaTime, float totalTime)
-{
+void Game::Draw(float deltaTime, float totalTime) {
 	// Frame START
 	// - These things should happen ONCE PER FRAME
 	// - At the beginning of Game::Draw() before drawing *anything*
@@ -282,9 +461,17 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	//Loop through the mesh vector and draw the meshes
 	for (std::shared_ptr<Mesh> mesh : meshes) {
+		//Update constant buffer per mesh, then draw it
+		UpdateConstantBuffer(mesh->meshTint, mesh->meshOffset);
 		mesh->Draw();
+		
 	}
+
+	//Prepare ImGui buffers
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
