@@ -36,9 +36,6 @@ private:
 	void CreateWindowInfoGui();
 	void CreateMeshGui();
 
-	//Constant Buffer Helper
-	void UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 world);
-
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do

@@ -2,20 +2,11 @@
 
 void Transform::UpdateMatrices() {
     //Create matrices for translation, scale, and rotation
-    DirectX::XMMATRIX translation = DirectX::XMMatrixTranslation(
-        this->position.x,
-        this->position.y,
-        this->position.z);
+    DirectX::XMMATRIX translation = DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&position));
 
-    DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(
-        this->scale.x,
-        this->scale.y,
-        this->scale.z);
-
-    DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(
-        this->rotation.x,
-        this->rotation.y,
-        this->rotation.z);
+    DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&this->rotation));
+        
+    DirectX::XMMATRIX scale = DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&this->scale));
 
     //Apply the transformation matrices
     DirectX::XMMATRIX world = scale * rotation * translation;

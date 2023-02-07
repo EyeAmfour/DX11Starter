@@ -13,8 +13,6 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
 
-#include <chrono>
-
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -310,10 +308,10 @@ void Game::CreateGeometry() {
 		)
 	);
 
-	//entities.push_back(std::make_shared<Entity>(meshes[0]));
-	//entities.push_back(std::make_shared<Entity>(meshes[1]));
-	//entities.push_back(std::make_shared<Entity>(meshes[1]));
-	//entities.push_back(std::make_shared<Entity>(meshes[2]));
+	entities.push_back(std::make_shared<Entity>(meshes[0]));
+	entities.push_back(std::make_shared<Entity>(meshes[1]));
+	entities.push_back(std::make_shared<Entity>(meshes[1]));
+	entities.push_back(std::make_shared<Entity>(meshes[2]));
 	entities.push_back(std::make_shared<Entity>(meshes[2]));
 }
 
@@ -338,11 +336,14 @@ void Game::Update(float deltaTime, float totalTime) {
 	CreateWindowInfoGui();
 	CreateMeshGui();
 
-	for (std::shared_ptr<Entity> entity : entities) {
-		//entity.get()->GetTransform().get()->MoveAbsolute(DirectX::XMScalarSin(1.0f) * deltaTime, 0.0f, 0.0f);
-		//entity.get()->GetTransform().get()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
-		//entity.get()->GetTransform().get()->Scale(0.999f, 0.999f, 0.0f);
-	}
+	//entity->GetTransform()->MoveAbsolute(-0.05f * deltaTime, 0.0f, 0.0f);
+	//entity->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
+	//entity->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
+	//entity->GetTransform()->Scale(0.999f, 0.999f, 0.0f);
+	entities[0]->GetTransform()->SetScale((sin(totalTime) + 2.0f) / 2.0f, (sin(totalTime) + 2.0f) / 2.0f, 0.0f);
+	entities[1]->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
+	entities[2]->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
+	entities[4]->GetTransform()->SetPosition(0.0f, sin(totalTime), 0.0f);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -415,15 +416,28 @@ void Game::CreateMeshGui() {
 		int index = 0;
 		//Loop through each mesh and made a node for it with child properties
 		for (std::shared_ptr<Entity> entity : entities) {
-			if (ImGui::TreeNode((void*)(intptr_t)index, "Entity %d (%d indices)", index, entity.get()->GetMesh().get()->GetIndexCount())) {
-				auto entityPosition = entity.get()->GetTransform()->GetPosition();
-				auto entityRotation = entity.get()->GetTransform()->GetPitchYawRoll();
-				auto entityScale = entity.get()->GetTransform()->GetScale();
+			if (ImGui::TreeNode((void*)(intptr_t)index, "Entity %d (%d indices)", index, entity->GetMesh()->GetIndexCount())) {
+				auto entityPosition = entity->GetTransform()->GetPosition();
+				auto entityRotation = entity->GetTransform()->GetPitchYawRoll();
+				auto entityScale = entity->GetTransform()->GetScale();
 
-				ImGui::ColorEdit4("Entity Tint", &entity.get()->GetMesh()->meshTint.x);
-				ImGui::DragFloat3("Entity Position", &entityPosition.x, 0.005f);
-				ImGui::DragFloat3("Entity Rotation", &entityRotation.x, 0.005f);
-				ImGui::DragFloat3("Entity Scale", &entityScale.x, 0.005f);
+				//Mesh Color
+				ImGui::ColorEdit4("Entity Tint", &entity->GetMesh()->meshTint.x);
+
+				//Entity Position
+				if (ImGui::DragFloat3("Entity Position", &entityPosition.x, 0.005f)) {
+					entity->GetTransform()->SetPosition(entityPosition);
+				}
+
+				//Entity Rotation
+				if (ImGui::DragFloat3("Entity Rotation", &entityRotation.x, 0.005f)) {
+					entity->GetTransform()->SetRotation(entityRotation);
+				}
+
+				//Entity Scale
+				if (ImGui::DragFloat3("Entity Scale", &entityScale.x, 0.005f)) {
+					entity->GetTransform()->SetScale(entityScale);
+				}
 
 				ImGui::TreePop();
 			}
@@ -434,36 +448,6 @@ void Game::CreateMeshGui() {
 	}
 
 	ImGui::End();
-}
-
-// --------------------------------------------------------
-// Update the Constant Buffer
-// --------------------------------------------------------
-void Game::UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 world) {
-	//Create local instance of struct to hold data
-	VertexShaderExternalData vsData;
-	//vsData.colorTint = XMFLOAT4(0.1f, 0.9f, 0.3f, 1.0f);
-	//vsData.offset = XMFLOAT3(0.15f, -0.3f, 0.0f);
-	vsData.colorTint = tint;
-	vsData.worldMatrix = world;
-
-	//Write data to constant buffer
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-
-	//Lock buffer
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-	//Copy data over
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-	//Unlock buffer
-	context->Unmap(vsConstantBuffer.Get(), 0);
-
-	//Bind the constant buffer
-	context->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we activating? Can do multiple at once
-		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 }
 
 // --------------------------------------------------------
@@ -485,8 +469,7 @@ void Game::Draw(float deltaTime, float totalTime) {
 	//Loop through the mesh vector and draw the meshes
 	for (std::shared_ptr<Entity> entity : entities) {
 		//Update constant buffer per mesh, then draw it
-		UpdateConstantBuffer(entity.get()->GetMesh()->meshTint, entity.get()->GetTransform().get()->GetWorldMatrix());
-		entity->Draw();
+		entity->Draw(context, vsConstantBuffer);
 		
 	}
 
