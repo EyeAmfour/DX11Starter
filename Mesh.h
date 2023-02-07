@@ -43,7 +43,7 @@ public:
 
 	//Mesh Property Variables
 	DirectX::XMFLOAT4 meshTint;
-	DirectX::XMFLOAT3 meshOffset;
+	DirectX::XMFLOAT4X4 meshWorldMatrix;
 
 	//Gets the number of indicies in the index buffer
 	int GetIndexCount();

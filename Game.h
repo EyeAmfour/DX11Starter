@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 
+#include "Entity.h"
 #include "Mesh.h"
 
 class Game 
@@ -36,7 +37,7 @@ private:
 	void CreateMeshGui();
 
 	//Constant Buffer Helper
-	void UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT3 offset);
+	void UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 world);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -54,6 +55,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
 	//Mesh Assignment variables
+	std::vector<std::shared_ptr<Entity>> entities;
 	std::vector<std::shared_ptr<Mesh>> meshes;
 };
 

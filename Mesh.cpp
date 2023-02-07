@@ -1,5 +1,4 @@
 #include "Mesh.h"
-#include <iostream>
 
 void Mesh::CreateVertexBuffer(Vertex* vertices, int numVerts, Microsoft::WRL::ComPtr<ID3D11Device> device) {
 	// First, we need to describe the buffer we want Direct3D to make on the GPU
@@ -50,7 +49,7 @@ Mesh::Mesh(
 	CreateIndexBuffer(indices, device);
 
 	meshTint = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	meshOffset = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMStoreFloat4x4(&meshWorldMatrix, DirectX::XMMatrixIdentity());
 }
 
 Mesh::~Mesh() {

@@ -13,6 +13,8 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
 
+#include <chrono>
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -307,6 +309,12 @@ void Game::CreateGeometry() {
 			context
 		)
 	);
+
+	//entities.push_back(std::make_shared<Entity>(meshes[0]));
+	//entities.push_back(std::make_shared<Entity>(meshes[1]));
+	//entities.push_back(std::make_shared<Entity>(meshes[1]));
+	//entities.push_back(std::make_shared<Entity>(meshes[2]));
+	entities.push_back(std::make_shared<Entity>(meshes[2]));
 }
 
 
@@ -329,6 +337,12 @@ void Game::Update(float deltaTime, float totalTime) {
 
 	CreateWindowInfoGui();
 	CreateMeshGui();
+
+	for (std::shared_ptr<Entity> entity : entities) {
+		//entity.get()->GetTransform().get()->MoveAbsolute(DirectX::XMScalarSin(1.0f) * deltaTime, 0.0f, 0.0f);
+		//entity.get()->GetTransform().get()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
+		//entity.get()->GetTransform().get()->Scale(0.999f, 0.999f, 0.0f);
+	}
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -394,16 +408,23 @@ void Game::CreateWindowInfoGui() {
 // Create Mesh Gui
 // --------------------------------------------------------
 void Game::CreateMeshGui() {
-	ImGui::Begin("Mesh Properties");
+	ImGui::Begin("Entity Properties");
 
 	//Create the root node
-	if (ImGui::TreeNode("Meshes")) {
+	if (ImGui::TreeNode("Entities")) {
 		int index = 0;
 		//Loop through each mesh and made a node for it with child properties
-		for (std::shared_ptr<Mesh> mesh : meshes) {
-			if (ImGui::TreeNode((void*)(intptr_t)index, "Mesh %d", index)) {
-				ImGui::DragFloat4("Mesh Tint", &mesh->meshTint.x, 0.005f, 0.0f, 1.0f);
-				ImGui::DragFloat3("Mesh Offset", &mesh->meshOffset.x, 0.005f);
+		for (std::shared_ptr<Entity> entity : entities) {
+			if (ImGui::TreeNode((void*)(intptr_t)index, "Entity %d (%d indices)", index, entity.get()->GetMesh().get()->GetIndexCount())) {
+				auto entityPosition = entity.get()->GetTransform()->GetPosition();
+				auto entityRotation = entity.get()->GetTransform()->GetPitchYawRoll();
+				auto entityScale = entity.get()->GetTransform()->GetScale();
+
+				ImGui::ColorEdit4("Entity Tint", &entity.get()->GetMesh()->meshTint.x);
+				ImGui::DragFloat3("Entity Position", &entityPosition.x, 0.005f);
+				ImGui::DragFloat3("Entity Rotation", &entityRotation.x, 0.005f);
+				ImGui::DragFloat3("Entity Scale", &entityScale.x, 0.005f);
+
 				ImGui::TreePop();
 			}
 
@@ -418,13 +439,13 @@ void Game::CreateMeshGui() {
 // --------------------------------------------------------
 // Update the Constant Buffer
 // --------------------------------------------------------
-void Game::UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT3 offset) {
+void Game::UpdateConstantBuffer(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 world) {
 	//Create local instance of struct to hold data
 	VertexShaderExternalData vsData;
 	//vsData.colorTint = XMFLOAT4(0.1f, 0.9f, 0.3f, 1.0f);
 	//vsData.offset = XMFLOAT3(0.15f, -0.3f, 0.0f);
 	vsData.colorTint = tint;
-	vsData.offset = offset;
+	vsData.worldMatrix = world;
 
 	//Write data to constant buffer
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
@@ -462,10 +483,10 @@ void Game::Draw(float deltaTime, float totalTime) {
 	}
 
 	//Loop through the mesh vector and draw the meshes
-	for (std::shared_ptr<Mesh> mesh : meshes) {
+	for (std::shared_ptr<Entity> entity : entities) {
 		//Update constant buffer per mesh, then draw it
-		UpdateConstantBuffer(mesh->meshTint, mesh->meshOffset);
-		mesh->Draw();
+		UpdateConstantBuffer(entity.get()->GetMesh()->meshTint, entity.get()->GetTransform().get()->GetWorldMatrix());
+		entity->Draw();
 		
 	}
 
