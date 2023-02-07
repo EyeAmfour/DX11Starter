@@ -44,18 +44,28 @@ void Entity::UpdateConstantBuffer(
 		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 }
 
+// --------------------------------------------------------
+// Gets the smart pointer to the Mesh
+// --------------------------------------------------------
 std::shared_ptr<Mesh> Entity::GetMesh() {
     return mesh;
 }
 
+// --------------------------------------------------------
+// Gets the smart pointer to the Transform
+// --------------------------------------------------------
 std::shared_ptr<Transform> Entity::GetTransform() {
     return transform;
 }
 
+// --------------------------------------------------------
+// Updates the constant buffer and then draws the mesh
+// --------------------------------------------------------
 void Entity::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer) {
 
+	//Update the constant buffer, then draw the entity
 	UpdateConstantBuffer(context, vsConstantBuffer, mesh->meshTint, transform->GetWorldMatrix());
     mesh->Draw();
 }

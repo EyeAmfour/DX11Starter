@@ -333,13 +333,11 @@ void Game::Update(float deltaTime, float totalTime) {
 	//Update ImGui
 	UpdateGui(deltaTime);
 
+	//Create the ImGui windows
 	CreateWindowInfoGui();
 	CreateMeshGui();
 
-	//entity->GetTransform()->MoveAbsolute(-0.05f * deltaTime, 0.0f, 0.0f);
-	//entity->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
-	//entity->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
-	//entity->GetTransform()->Scale(0.999f, 0.999f, 0.0f);
+	//Apply transformations to entities
 	entities[0]->GetTransform()->SetScale((sin(totalTime) + 2.0f) / 2.0f, (sin(totalTime) + 2.0f) / 2.0f, 0.0f);
 	entities[1]->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
 	entities[2]->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
@@ -374,6 +372,9 @@ void Game::UpdateGui(float deltaTime) {
 	//ImGui::ShowDemoWindow();
 }
 
+// --------------------------------------------------------
+// Create Window Information Gui
+// --------------------------------------------------------
 void Game::CreateWindowInfoGui() {
 	ImGui::Begin("Program Information");
 
@@ -466,9 +467,8 @@ void Game::Draw(float deltaTime, float totalTime) {
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	//Loop through the mesh vector and draw the meshes
+	//Loop through the entity vector and draw the entities
 	for (std::shared_ptr<Entity> entity : entities) {
-		//Update constant buffer per mesh, then draw it
 		entity->Draw(context, vsConstantBuffer);
 		
 	}
