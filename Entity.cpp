@@ -1,7 +1,5 @@
 #include "Entity.h"
 
-#include <iostream>
-
 Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(mesh) {
     transform = std::make_shared<Transform>();
 }
