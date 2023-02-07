@@ -423,20 +423,20 @@ void Game::CreateMeshGui() {
 				auto entityScale = entity->GetTransform()->GetScale();
 
 				//Mesh Color
-				ImGui::ColorEdit4("Entity Tint", &entity->GetMesh()->meshTint.x);
+				ImGui::ColorEdit4("Tint", &entity->GetMesh()->meshTint.x);
 
 				//Entity Position
-				if (ImGui::DragFloat3("Entity Position", &entityPosition.x, 0.005f)) {
+				if (ImGui::DragFloat3("Position", &entityPosition.x, 0.005f)) {
 					entity->GetTransform()->SetPosition(entityPosition);
 				}
 
 				//Entity Rotation
-				if (ImGui::DragFloat3("Entity Rotation", &entityRotation.x, 0.005f)) {
+				if (ImGui::DragFloat3("Rotation", &entityRotation.x, 0.005f)) {
 					entity->GetTransform()->SetRotation(entityRotation);
 				}
 
 				//Entity Scale
-				if (ImGui::DragFloat3("Entity Scale", &entityScale.x, 0.005f)) {
+				if (ImGui::DragFloat3("Scale", &entityScale.x, 0.005f)) {
 					entity->GetTransform()->SetScale(entityScale);
 				}
 
