@@ -14,7 +14,9 @@ void Entity::UpdateConstantBuffer(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
 	DirectX::XMFLOAT4 tint,
-	DirectX::XMFLOAT4X4 world) {
+	DirectX::XMFLOAT4X4 world,
+	DirectX::XMFLOAT4X4 view,
+	DirectX::XMFLOAT4X4 projection) {
 
 	//Create local instance of struct to hold data
 	VertexShaderExternalData vsData;
@@ -22,6 +24,8 @@ void Entity::UpdateConstantBuffer(
 	//vsData.offset = XMFLOAT3(0.15f, -0.3f, 0.0f);
 	vsData.colorTint = tint;
 	vsData.worldMatrix = world;
+	vsData.viewMatrix = view;
+	vsData.projectionMatrix = projection;
 
 	//Write data to constant buffer
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
@@ -61,9 +65,18 @@ std::shared_ptr<Transform> Entity::GetTransform() {
 // --------------------------------------------------------
 void Entity::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer) {
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
+	std::shared_ptr<Camera> camera) {
 
 	//Update the constant buffer, then draw the entity
-	UpdateConstantBuffer(context, vsConstantBuffer, mesh->meshTint, transform->GetWorldMatrix());
+	UpdateConstantBuffer(
+		context,
+		vsConstantBuffer,
+		mesh->meshTint,
+		transform->GetWorldMatrix(),
+		camera->GetView(),
+		camera->GetProjection()
+	);
+
     mesh->Draw();
 }

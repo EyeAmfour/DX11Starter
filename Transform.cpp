@@ -24,6 +24,10 @@ Transform::Transform() {
     scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
     rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
+    right = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+    up = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+    forward = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
+
     DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixIdentity());
     DirectX::XMStoreFloat4x4(&worldInverseTranspose, DirectX::XMMatrixIdentity());
 }
@@ -110,6 +114,18 @@ DirectX::XMFLOAT4X4 Transform::GetWorldInverseTransposeMatrix() {
     return worldInverseTranspose;
 }
 
+DirectX::XMFLOAT3 Transform::GetRight() {
+    return right;
+}
+
+DirectX::XMFLOAT3 Transform::GetUp() {
+    return up;
+}
+
+DirectX::XMFLOAT3 Transform::GetForward() {
+    return forward;
+}
+
 // -------------------------------------------------------------
 // Translates the position with the provided x, y, and z params
 // -------------------------------------------------------------
@@ -121,11 +137,23 @@ void Transform::MoveAbsolute(float x, float y, float z) {
 // Translates the position with the provided offset
 // --------------------------------------------------------
 void Transform::MoveAbsolute(DirectX::XMFLOAT3 offset) {
-    position = DirectX::XMFLOAT3(
-        position.x + offset.x,
-        position.y + offset.y,
-        position.z + offset.z
+    DirectX::XMStoreFloat3(
+        &this->position,
+        DirectX::XMVectorAdd(
+            DirectX::XMLoadFloat3(&this->position),
+            DirectX::XMLoadFloat3(&offset)
+        )
     );
+}
+
+void Transform::MoveRelative(float x, float y, float z) {
+    DirectX::XMFLOAT3 input(x, y, z);
+    DirectX::XMVECTOR direction = DirectX::XMLoadFloat3(&input);
+    DirectX::XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+    DirectX::XMVECTOR rotated = DirectX::XMVector3Rotate(direction, quaternion);
+
+    DirectX::XMVECTOR pos = DirectX::XMLoadFloat3(&position);
+    DirectX::XMStoreFloat3(&position, DirectX::XMVectorAdd(pos, rotated));
 }
 
 // --------------------------------------------------------
@@ -139,11 +167,25 @@ void Transform::Rotate(float pitch, float yaw, float roll) {
 // Rotates with the provided rotation
 // --------------------------------------------------------
 void Transform::Rotate(DirectX::XMFLOAT3 rotation) {
-    this->rotation = DirectX::XMFLOAT3(
-        this->rotation.x + rotation.x,
-        this->rotation.y + rotation.y,
-        this->rotation.z + rotation.z
+    //Update the rotation
+    DirectX::XMStoreFloat3(
+        &this->rotation, 
+        DirectX::XMVectorAdd(
+            DirectX::XMLoadFloat3(&this->rotation), 
+            DirectX::XMLoadFloat3(&rotation)
+        )
     );
+
+    //Update right, up, and forward relative to transform
+    DirectX::XMVECTOR worldRight = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+    DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    DirectX::XMVECTOR worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+    DirectX::XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
+
+    DirectX::XMStoreFloat3(&this->right, DirectX::XMVector3Rotate(worldRight, quaternion));
+    DirectX::XMStoreFloat3(&this->up, DirectX::XMVector3Rotate(worldUp, quaternion));
+    DirectX::XMStoreFloat3(&this->forward, DirectX::XMVector3Rotate(worldForward, quaternion));
 }
 
 // --------------------------------------------------------
@@ -157,9 +199,11 @@ void Transform::Scale(float x, float y, float z) {
 // Scales with the provided scale
 // --------------------------------------------------------
 void Transform::Scale(DirectX::XMFLOAT3 scale) {
-    this->scale = DirectX::XMFLOAT3(
-        this->scale.x * scale.x,
-        this->scale.y * scale.y,
-        this->scale.z * scale.z
+    DirectX::XMStoreFloat3(
+        &this->scale,
+        DirectX::XMVectorMultiply(
+            DirectX::XMLoadFloat3(&this->scale),
+            DirectX::XMLoadFloat3(&scale)
+        )
     );
 }

@@ -9,6 +9,7 @@
 
 #include "Entity.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 class Game 
 	: public DXCore
@@ -34,7 +35,7 @@ private:
 
 	//ImGui Window Creation Methods
 	void CreateWindowInfoGui();
-	void CreateMeshGui();
+	void CreateInspectorGui();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -54,5 +55,9 @@ private:
 	//Mesh Assignment variables
 	std::vector<std::shared_ptr<Entity>> entities;
 	std::vector<std::shared_ptr<Mesh>> meshes;
+
+	//Camera field
+	std::vector<std::shared_ptr<Camera>> cameras;
+	int selectedCameraIndex;
 };
 

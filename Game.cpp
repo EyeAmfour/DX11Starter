@@ -70,6 +70,26 @@ void Game::Init() {
 	LoadShaders();
 	CreateGeometry();
 
+	//Create cameras
+	cameras.push_back(std::make_shared<Camera>(
+		0.0f, 0.0f, -5.0f,
+		5.0f,
+		0.01f,
+		DirectX::XM_PI / 4.0f,
+		(float)this->windowWidth / this->windowHeight
+	));
+
+	cameras.push_back(std::make_shared<Camera>(
+		3.0f, 10.0f, -12.0f,
+		5.0f,
+		0.01f,
+		DirectX::XM_PI / 2.0f,
+		(float)this->windowWidth / this->windowHeight
+	));
+
+	//Set initial selected camera
+	selectedCameraIndex = 0;
+
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -308,6 +328,7 @@ void Game::CreateGeometry() {
 		)
 	);
 
+	//Create entities
 	entities.push_back(std::make_shared<Entity>(meshes[0]));
 	entities.push_back(std::make_shared<Entity>(meshes[1]));
 	entities.push_back(std::make_shared<Entity>(meshes[1]));
@@ -324,6 +345,11 @@ void Game::CreateGeometry() {
 void Game::OnResize() {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+
+	//Update all camera projection matrices
+	for (std::shared_ptr<Camera> camera : cameras) {
+		camera->UpdateProjectionMatrix((float)this->windowWidth / this->windowHeight);
+	}
 }
 
 // --------------------------------------------------------
@@ -335,13 +361,16 @@ void Game::Update(float deltaTime, float totalTime) {
 
 	//Create the ImGui windows
 	CreateWindowInfoGui();
-	CreateMeshGui();
+	CreateInspectorGui();
 
 	//Apply transformations to entities
 	entities[0]->GetTransform()->SetScale((sin(totalTime) + 2.0f) / 2.0f, (sin(totalTime) + 2.0f) / 2.0f, 0.0f);
 	entities[1]->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
 	entities[2]->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
 	entities[4]->GetTransform()->SetPosition(0.0f, sin(totalTime), 0.0f);
+
+	//Update the selected camera
+	cameras[selectedCameraIndex]->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -409,10 +438,10 @@ void Game::CreateWindowInfoGui() {
 // --------------------------------------------------------
 // Create Mesh Gui
 // --------------------------------------------------------
-void Game::CreateMeshGui() {
-	ImGui::Begin("Entity Properties");
+void Game::CreateInspectorGui() {
+	ImGui::Begin("Game Inspector");
 
-	//Create the root node
+	//Create the root node for entities
 	if (ImGui::TreeNode("Entities")) {
 		int index = 0;
 		//Loop through each mesh and made a node for it with child properties
@@ -448,6 +477,75 @@ void Game::CreateMeshGui() {
 		ImGui::TreePop();
 	}
 
+	//Create the root node for cameras
+	if (ImGui::TreeNode("Cameras")) {
+
+		//Create previous camera button
+		if (ImGui::Button("Select Previous Camera")) {
+			//Check for wrapping to last camera in list.
+			//Otherwise, just go to the previous camera
+			if (selectedCameraIndex - 1 < 0) {
+				selectedCameraIndex = cameras.size() - 1;
+			} else {
+				selectedCameraIndex--;
+			}
+		}
+
+		//Create next camera button
+		if (ImGui::Button("Select Next Camera")) {
+			//Check for wrapping to first camera in list.
+			//Otherwise, just go to the next camera
+			if (selectedCameraIndex + 1 >= cameras.size()) {
+				selectedCameraIndex = 0;
+			} else {
+				selectedCameraIndex++;
+			}
+		}
+
+		int index = 0;
+
+		//Loop through each mesh and made a node for it with child properties
+		for (std::shared_ptr<Camera> camera : cameras) {
+			if (ImGui::TreeNode((void*)(intptr_t)index, "Camera %d %s", index, (selectedCameraIndex == index ? "(Selected)" : ""))) {
+				auto cameraPosition = camera->GetTransform()->GetPosition();
+				auto cameraRotation = camera->GetTransform()->GetPitchYawRoll();
+				auto cameraMoveSpeed = camera->GetMoveSpeed();
+				auto cameraRotationSpeed = camera->GetRotationSpeed();
+				auto cameraFieldOfView = camera->GetFieldOfView();
+				/*auto cameraRight = camera->GetTransform().GetRight();
+				auto cameraUp = camera->GetTransform().GetUp();
+				auto cameraForward = camera->GetTransform().GetForward();*/
+
+				//Camera Position
+				ImGui::Text("Position: [%f, %f, %f]", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+				//Camera Rotation
+				ImGui::Text("Rotation: [%f, %f, %f]", cameraRotation.x, cameraRotation.y, cameraRotation.z);
+
+				ImGui::Text("Field Of View: %f", cameraFieldOfView);
+
+				if (ImGui::DragFloat("Move Speed", &cameraMoveSpeed, 0.005f)) {
+					camera->SetMoveSpeed(cameraMoveSpeed);
+				}
+
+				if (ImGui::DragFloat("Rotation Speed", &cameraRotationSpeed, 0.0001f)) {
+					camera->SetRotationSpeed(cameraRotationSpeed);
+				}
+
+				/*ImGui::DragFloat3("Right", &cameraRight.x, 0.005f);
+				ImGui::DragFloat3("Up", &cameraUp.x, 0.005f);
+				ImGui::DragFloat3("Forward", &cameraForward.x, 0.005f);*/
+
+				ImGui::TreePop();
+			}
+
+			index++;
+		}
+
+
+		ImGui::TreePop();
+	}
+
 	ImGui::End();
 }
 
@@ -469,7 +567,7 @@ void Game::Draw(float deltaTime, float totalTime) {
 
 	//Loop through the entity vector and draw the entities
 	for (std::shared_ptr<Entity> entity : entities) {
-		entity->Draw(context, vsConstantBuffer);
+		entity->Draw(context, vsConstantBuffer, cameras[selectedCameraIndex]);
 		
 	}
 

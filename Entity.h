@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include "Camera.h"
 
 class Entity {
 private:
@@ -17,7 +18,9 @@ private:
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
 		DirectX::XMFLOAT4 tint,
-		DirectX::XMFLOAT4X4 world
+		DirectX::XMFLOAT4X4 world,
+		DirectX::XMFLOAT4X4 view,
+		DirectX::XMFLOAT4X4 projection
 	);
 
 public:
@@ -31,7 +34,8 @@ public:
 
 	void Draw(
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer
+		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
+		std::shared_ptr<Camera> camera
 	);
 };
 
