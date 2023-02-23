@@ -1,6 +1,5 @@
 //Define Constant Buffer
 cbuffer ExternalData : register(b0) {
-	float4 colorTint;
 	matrix world;
 	matrix view;
 	matrix projection;
@@ -19,7 +18,8 @@ struct VertexShaderInput
 	//  |    |                |
 	//  v    v                v
 	float3 localPosition	: POSITION;     // XYZ position
-	float4 color			: COLOR;        // RGBA color
+	float3 normal			: NORMAL;
+	float2 uv				: TEXCOORD;
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -35,7 +35,7 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float4 color			: COLOR;        // RGBA color
+	float2 uv				: TEXCOORD;
 };
 
 // --------------------------------------------------------
@@ -63,10 +63,8 @@ VertexToPixel main( VertexShaderInput input )
 	matrix wvp = mul(projection, mul(view, world));
 	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
 
-	// Pass the color through 
-	// - The values will be interpolated per-pixel by the rasterizer
-	// - We don't need to alter it here, but we do need to send it to the pixel shader
-	output.color = input.color * colorTint;
+	// Pass the uv coordinates through 
+	output.uv = input.uv;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

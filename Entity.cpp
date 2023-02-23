@@ -1,6 +1,6 @@
 #include "Entity.h"
 
-Entity::Entity(std::shared_ptr<Mesh> mesh) : mesh(mesh) {
+Entity::Entity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> mat) : mesh(mesh), material(mat) {
     transform = std::make_shared<Transform>();
 }
 
@@ -12,38 +12,31 @@ Entity::~Entity() {
 // --------------------------------------------------------
 void Entity::UpdateConstantBuffer(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
-	DirectX::XMFLOAT4 tint,
-	DirectX::XMFLOAT4X4 world,
-	DirectX::XMFLOAT4X4 view,
-	DirectX::XMFLOAT4X4 projection) {
+	std::shared_ptr<Camera> camera,
+	float totalTime) {
 
-	//Create local instance of struct to hold data
-	VertexShaderExternalData vsData;
-	//vsData.colorTint = XMFLOAT4(0.1f, 0.9f, 0.3f, 1.0f);
-	//vsData.offset = XMFLOAT3(0.15f, -0.3f, 0.0f);
-	vsData.colorTint = tint;
-	vsData.worldMatrix = world;
-	vsData.viewMatrix = view;
-	vsData.projectionMatrix = projection;
+	//Store data in vertex shader
+	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
+
+	//vs->SetFloat4("colorTint", material->GetColorTint());
+	vs->SetMatrix4x4("world", transform->GetWorldMatrix());
+	vs->SetMatrix4x4("view", camera->GetView());
+	vs->SetMatrix4x4("projection", camera->GetProjection());
+
+	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
+
+	ps->SetFloat4("colorTint", material->GetColorTint());
+	ps->SetFloat("time", totalTime);
 
 	//Write data to constant buffer
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-
-	//Lock buffer
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-	//Copy data over
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-	//Unlock buffer
-	context->Unmap(vsConstantBuffer.Get(), 0);
+	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 	//Bind the constant buffer
-	context->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we activating? Can do multiple at once
-		vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
+	//context->VSSetConstantBuffers(
+	//	0, // Which slot (register) to bind the buffer to?
+	//	1, // How many are we activating? Can do multiple at once
+	//	vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 }
 
 // --------------------------------------------------------
@@ -60,22 +53,30 @@ std::shared_ptr<Transform> Entity::GetTransform() {
     return transform;
 }
 
+std::shared_ptr<Material> Entity::GetMaterial() {
+	return material;
+}
+
+void Entity::SetMaterial(std::shared_ptr<Material> mat) {
+	material = mat;
+}
+
 // --------------------------------------------------------
 // Updates the constant buffer and then draws the mesh
 // --------------------------------------------------------
 void Entity::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
-	std::shared_ptr<Camera> camera) {
+	std::shared_ptr<Camera> camera,
+	float totalTime) {
+
+	material->GetVertexShader()->SetShader();
+	material->GetPixelShader()->SetShader();
 
 	//Update the constant buffer, then draw the entity
 	UpdateConstantBuffer(
 		context,
-		vsConstantBuffer,
-		mesh->meshTint,
-		transform->GetWorldMatrix(),
-		camera->GetView(),
-		camera->GetProjection()
+		camera,
+		totalTime
 	);
 
     mesh->Draw();

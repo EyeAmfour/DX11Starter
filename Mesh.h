@@ -19,7 +19,7 @@ private:
 
 
 	void CreateVertexBuffer(Vertex* vertices, int numVerts, Microsoft::WRL::ComPtr<ID3D11Device> device);
-	void CreateIndexBuffer(unsigned int* indices, Microsoft::WRL::ComPtr<ID3D11Device> device);
+	void CreateIndexBuffer(unsigned int* indices, int numIndices, Microsoft::WRL::ComPtr<ID3D11Device> device);
 
 public:
 	//Constructor
@@ -31,6 +31,8 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Device> device,
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context
 	);
+
+	Mesh(const wchar_t* fileToLoad, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 
 	//Destructor
 	~Mesh();

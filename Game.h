@@ -11,6 +11,9 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+#include "SimpleShader.h"
+#include "Material.h"
+
 class Game 
 	: public DXCore
 {
@@ -45,12 +48,10 @@ private:
 	// Buffers to hold actual geometry data
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 	
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	std::vector<std::shared_ptr<SimplePixelShader>> pixelShaders;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 
 	//Mesh Assignment variables
 	std::vector<std::shared_ptr<Entity>> entities;
@@ -59,5 +60,8 @@ private:
 	//Camera field
 	std::vector<std::shared_ptr<Camera>> cameras;
 	int selectedCameraIndex;
+
+	//Material field
+	std::vector<std::shared_ptr<Material>> materials;
 };
 
