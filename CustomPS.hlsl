@@ -1,28 +1,9 @@
+#include "ShaderIncludes.hlsli"
+
 //Define Constant Buffer
 cbuffer ExternalData : register(b0) {
 	float4 colorTint;
 	float time;
-}
-
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel {
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv				: TEXCOORD;
-};
-
-//Pseudo-Random Function for noise
-//Implemented from assignment 6 notes
-float random(float2 s) {
-	return frac(sin(dot(s, float2(12.9898, 78.233))) * 43758.5453123);
 }
 
 // --------------------------------------------------------

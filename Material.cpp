@@ -1,7 +1,8 @@
 #include "Material.h"
 
-Material::Material(DirectX::XMFLOAT4 tint, std::shared_ptr<SimpleVertexShader> vs, std::shared_ptr<SimplePixelShader> ps) :
+Material::Material(DirectX::XMFLOAT4 tint, float roughness, std::shared_ptr<SimpleVertexShader> vs, std::shared_ptr<SimplePixelShader> ps) :
 colorTint(tint),
+roughness(roughness),
 vertexShader(vs),
 pixelShader(ps) {
 
@@ -15,6 +16,10 @@ Material::~Material() {
 // --------------------------------------------------------
 DirectX::XMFLOAT4 Material::GetColorTint() {
     return colorTint;
+}
+
+float Material::GetRoughness() {
+    return roughness;
 }
 
 // --------------------------------------------------------
@@ -36,6 +41,10 @@ std::shared_ptr<SimplePixelShader> Material::GetPixelShader() {
 // --------------------------------------------------------
 void Material::SetColorTint(DirectX::XMFLOAT4 tint) {
     colorTint = DirectX::XMFLOAT4(tint);
+}
+
+void Material::SetRoughness(float roughness) {
+    Material::roughness = roughness;
 }
 
 // --------------------------------------------------------

@@ -1,23 +1,14 @@
+#include "ShaderIncludes.hlsli"
+
 //Define Constant Buffer
 cbuffer ExternalData : register(b0) {
 	float4 colorTint;
-}
+	float roughness;
+	float3 cameraPosition;
+	float3 ambient;
 
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv				: TEXCOORD;
-};
+	Light lights[5];
+}
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -30,9 +21,32 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	return colorTint;
+	//Normalize the incoming normal
+	input.normal = normalize(input.normal);
+
+	//float3 CalculateLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness)
+
+	float3 finalLight;
+
+	for (int i = 0; i < 5; i++) {
+		switch (lights[i].Type) {
+			case 0:
+				finalLight += CalculateDirectionalLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness);
+				break;
+
+			case 1:
+				finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness);
+				break;
+
+			case 2:
+				finalLight += float3(0, 0, 0);
+				break;
+
+			default:
+				finalLight += float3(0, 0, 0);
+				break;
+		}
+	}
+
+	return float4(finalLight, 1);
 }

@@ -71,17 +71,68 @@ void Game::Init() {
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 
+	//(0) Create White Material
+	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.051f, vertexShader, pixelShaders[0]));
+	
 	//(0) Create Red Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), vertexShader, pixelShaders[0]));
+	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), 0.0f, vertexShader, pixelShaders[0]));
 
 	//(1) Create Green Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), vertexShader, pixelShaders[0]));
+	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), 0.0f, vertexShader, pixelShaders[0]));
 
 	//(2) Create Blue Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), vertexShader, pixelShaders[0]));
+	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), 0.0f, vertexShader, pixelShaders[0]));
 
 	//(3) Create Material with CustomPS
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), vertexShader, pixelShaders[1]));
+	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 1.0f, vertexShader, pixelShaders[1]));
+
+	//Lights
+	//ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.25f);
+	ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	//Red light pointing right
+	directionalLight1 = {};
+	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight1.Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight1.Intensity = 1.0f;
+
+	//Yellow light pointing left and down
+	directionalLight2 = {};
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Direction = DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f);
+	directionalLight2.Color = DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f);
+	directionalLight2.Intensity = 1.0f;
+
+	//Teal light pointing up and left and forwards
+	directionalLight3 = {};
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Direction = DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f);
+	directionalLight3.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 1.0f);
+	directionalLight3.Intensity = 1.0f;
+
+	//Purple point light
+	pointLight1 = {};
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Range = 10.0f;
+	pointLight1.Position = DirectX::XMFLOAT3(-3.0f, 1.0f, -5.0f);
+	pointLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 1.0f);
+	pointLight1.Intensity = 1.0f;
+
+	//Green point light
+	pointLight2 = {};
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Range = 10.0f;
+	pointLight2.Position = DirectX::XMFLOAT3(0.0f, 5.0f, 0.0f);
+	pointLight2.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+	pointLight2.Intensity = 1.0f;
+
+	//Add lights to lights vector
+	lights.push_back(&directionalLight1);
+	lights.push_back(&directionalLight2);
+	lights.push_back(&directionalLight3);
+	lights.push_back(&pointLight1);
+	lights.push_back(&pointLight2);
 
 	CreateGeometry();
 
@@ -201,19 +252,19 @@ void Game::CreateGeometry() {
 
 	//Create entities using the meshes and materials
 	//(0) Cube Entity
-	entities.push_back(std::make_shared<Entity>(meshes[0], materials[3]));
+	entities.push_back(std::make_shared<Entity>(meshes[0], materials[0]));
 	entities[0]->GetTransform()->SetPosition(-9.0f, 0.0f, 0.0f);
 
 	//(1) Cylinder Entity
-	entities.push_back(std::make_shared<Entity>(meshes[1], materials[3]));
+	entities.push_back(std::make_shared<Entity>(meshes[1], materials[0]));
 	entities[1]->GetTransform()->SetPosition(-6.0f, 0.0f, 0.0f);
 
 	//(2) Helix Entity
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[3]));
+	entities.push_back(std::make_shared<Entity>(meshes[2], materials[0]));
 	entities[2]->GetTransform()->SetPosition(-3.0f, 0.0f, 0.0f);
 
 	//(3) Quad Entity
-	entities.push_back(std::make_shared<Entity>(meshes[3], materials[1]));
+	entities.push_back(std::make_shared<Entity>(meshes[3], materials[0]));
 	entities[3]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
 
 	//(4) Double Sided Quad Entity
@@ -221,11 +272,11 @@ void Game::CreateGeometry() {
 	entities[4]->GetTransform()->SetPosition(3.0f, 0.0f, 0.0f);
 
 	//(5) Sphere Entity
-	entities.push_back(std::make_shared<Entity>(meshes[5], materials[3]));
+	entities.push_back(std::make_shared<Entity>(meshes[5], materials[0]));
 	entities[5]->GetTransform()->SetPosition(6.0f, 0.0f, 0.0f);
 
 	//(6) Torus Entity
-	entities.push_back(std::make_shared<Entity>(meshes[6], materials[3]));
+	entities.push_back(std::make_shared<Entity>(meshes[6], materials[0]));
 	entities[6]->GetTransform()->SetPosition(9.0f, 0.0f, 0.0f);
 
 }
@@ -262,6 +313,10 @@ void Game::Update(float deltaTime, float totalTime) {
 	entities[1]->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
 	entities[2]->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
 	entities[4]->GetTransform()->SetPosition(0.0f, sin(totalTime), 0.0f);*/
+
+	for (std::shared_ptr<Entity> entity : entities) {
+		entity->GetTransform()->Rotate(0.0f, 1.0f * deltaTime, 0.0f);
+	}
 
 	//Update the selected camera
 	cameras[selectedCameraIndex]->Update(deltaTime);
@@ -338,7 +393,7 @@ void Game::CreateInspectorGui() {
 	//Create the root node for entities
 	if (ImGui::TreeNode("Entities")) {
 		int index = 0;
-		//Loop through each mesh and made a node for it with child properties
+		//Loop through each mesh and make a node for it with child properties
 		for (std::shared_ptr<Entity> entity : entities) {
 			if (ImGui::TreeNode((void*)(intptr_t)index, "Entity %d (%d indices)", index, entity->GetMesh()->GetIndexCount())) {
 				auto entityTint = entity->GetMaterial()->GetColorTint();
@@ -402,7 +457,7 @@ void Game::CreateInspectorGui() {
 
 		int index = 0;
 
-		//Loop through each mesh and made a node for it with child properties
+		//Loop through each camera and make a node for it with child properties
 		for (std::shared_ptr<Camera> camera : cameras) {
 			if (ImGui::TreeNode((void*)(intptr_t)index, "Camera %d %s", index, (selectedCameraIndex == index ? "(Selected)" : ""))) {
 				auto cameraPosition = camera->GetTransform()->GetPosition();
@@ -444,6 +499,32 @@ void Game::CreateInspectorGui() {
 		ImGui::TreePop();
 	}
 
+	//Create the root node for lights
+	if (ImGui::TreeNode("Lights")) {
+		ImGui::DragFloat3("Ambient Light", &ambientColor.x, 0.005f);
+
+		int index = 0;
+
+		//Loop through each light and make a node for it with child properties
+		for (Light* light : lights) {
+			if (ImGui::TreeNode((void*)(intptr_t)index, "Light %d", index)) {
+				ImGui::Text("Type: %s", (light->Type == 0 ? "Directional" : (light->Type == 1 ? "Point" : "Spot")));
+				ImGui::DragFloat3("Direction", &light->Direction.x, 0.005f);
+				ImGui::DragFloat("Range", &light->Range, 0.005f);
+				ImGui::DragFloat3("Position", &light->Position.x, 0.005f);
+				ImGui::DragFloat("Intensity", &light->Intensity, 0.005f);
+				ImGui::ColorEdit3("Color", &light->Color.x);
+				ImGui::DragFloat("Spot Falloff", &light->SpotFalloff, 0.005f);
+				ImGui::DragFloat3("Padding", &light->Padding.x, 0.005f);
+				ImGui::TreePop();
+			}
+
+			index++;
+		}
+
+		ImGui::TreePop();
+	}
+
 	ImGui::End();
 }
 
@@ -465,6 +546,10 @@ void Game::Draw(float deltaTime, float totalTime) {
 
 	//Loop through the entity vector and draw the entities
 	for (std::shared_ptr<Entity> entity : entities) {
+		entity->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
+
+		entity->GetMaterial()->GetPixelShader()->SetData("lights", lights[0], sizeof(Light) * (int)lights.size());
+
 		entity->Draw(context, cameras[selectedCameraIndex], totalTime);
 		
 	}

@@ -14,6 +14,8 @@
 #include "SimpleShader.h"
 #include "Material.h"
 
+#include "Lights.h"
+
 class Game 
 	: public DXCore
 {
@@ -63,5 +65,14 @@ private:
 
 	//Material field
 	std::vector<std::shared_ptr<Material>> materials;
+
+	//Light fields
+	DirectX::XMFLOAT3 ambientColor;
+	std::vector<Light*> lights;
+	Light directionalLight1;
+	Light directionalLight2;
+	Light directionalLight3;
+	Light pointLight1;
+	Light pointLight2;
 };
 

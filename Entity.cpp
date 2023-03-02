@@ -22,11 +22,14 @@ void Entity::UpdateConstantBuffer(
 	vs->SetMatrix4x4("world", transform->GetWorldMatrix());
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
+	vs->SetMatrix4x4("worldInvTranspose", transform->GetWorldInverseTransposeMatrix());
 
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
 
 	ps->SetFloat4("colorTint", material->GetColorTint());
 	ps->SetFloat("time", totalTime);
+	ps->SetFloat("roughness", material->GetRoughness());
+	ps->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 
 	//Write data to constant buffer
 	vs->CopyAllBufferData();
