@@ -10,6 +10,10 @@ cbuffer ExternalData : register(b0) {
 	Light lights[5];
 }
 
+Texture2D SurfaceTexture : register(t0); // "t" registers for textures
+Texture2D SurfaceTextureSpecular : register(t1);
+SamplerState BasicSampler : register(s0); // "s" registers for samplers
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -27,15 +31,16 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//float3 CalculateLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness)
 
 	float3 finalLight;
+	float specular = SurfaceTextureSpecular.Sample(BasicSampler, input.uv).r;
 
 	for (int i = 0; i < 5; i++) {
 		switch (lights[i].Type) {
 			case 0:
-				finalLight += CalculateDirectionalLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness);
+				finalLight += CalculateDirectionalLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specular);
 				break;
 
 			case 1:
-				finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness);
+				finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specular);
 				break;
 
 			case 2:
@@ -47,6 +52,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 				break;
 		}
 	}
+
+	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	finalLight += surfaceColor;
 
 	return float4(finalLight, 1);
 }

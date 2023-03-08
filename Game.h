@@ -74,5 +74,9 @@ private:
 	Light directionalLight3;
 	Light pointLight1;
 	Light pointLight2;
+
+	//Texture fields
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureSRVs;
+	std::unordered_map <std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplerOptions;
 };
 
