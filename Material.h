@@ -2,6 +2,7 @@
 
 #include <DirectXMath.h>
 #include <memory>
+#include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 
 #include "SimpleShader.h"
 
@@ -29,5 +30,13 @@ public:
 	void SetRoughness(float roughness);
 	void SetVertexShader(std::shared_ptr<SimpleVertexShader> vs);
 	void SetPixelShader(std::shared_ptr<SimplePixelShader> ps);
+
+	void AddTextureSRV(std::string name, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv);
+	void AddSampler(std::string name, Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState);
+
+	void PrepareMaterial(
+		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> srvs,
+		std::unordered_map <std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplers
+	);
 };
 

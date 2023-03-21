@@ -74,7 +74,7 @@ float Attenuate(Light light, float3 worldPos) {
 }
 
 //Calculate Directional Lighting
-float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness) {
+float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness, float specTex) {
 	float3 incomingLightDirection = normalize(incomingLight.Direction);
 
 	Light light = incomingLight;
@@ -85,13 +85,13 @@ float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surf
 
 	float3 V = normalize(cameraPos - worldPos);
 	float3 R = reflect(incomingLightDirection, normal);
-	float spec = Specular(R, V, roughness);
+	float spec = Specular(R, V, roughness) * specTex;
 
 	return surfaceColor.xyz * (finalColor + spec);
 }
 
 //Calculate Point Lighting
-float3 CalculatePointLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness) {
+float3 CalculatePointLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness, float specTex) {
 	float3 surfaceToLight = normalize(incomingLight.Position - worldPos);
 
 	Light light = incomingLight;
@@ -103,7 +103,7 @@ float3 CalculatePointLight(Light incomingLight, float3 normal, float4 surfaceCol
 
 	float3 V = normalize(cameraPos - worldPos);
 	float3 R = reflect(light.Direction, normal);
-	float spec = Specular(R, V, roughness);
+	float spec = Specular(R, V, roughness) * specTex;
 
 	float3 l = surfaceColor.xyz * (finalColor + spec);
 	float attenuation = Attenuate(light, worldPos);

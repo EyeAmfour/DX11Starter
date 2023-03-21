@@ -12,6 +12,8 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
 
+#include "WICTextureLoader.h"
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -40,6 +42,14 @@ Game::Game(HINSTANCE hInstance)
 
 	//Set initial selected camera
 	selectedCameraIndex = 0;
+
+	//Set initial light variables
+	ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	directionalLight1 = {};
+	directionalLight2 = {};
+	directionalLight3 = {};
+	pointLight1 = {};
+	pointLight2 = {};
 }
 
 // --------------------------------------------------------
@@ -71,6 +81,40 @@ void Game::Init() {
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 
+	//Load Textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSRV;
+	textureSRVs.insert({"SurfaceTexture", brokenTilesSRV});
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(),
+		0,
+		textureSRVs.at("SurfaceTexture").GetAddressOf()
+	);
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokenTilesSpecularSRV;
+	textureSRVs.insert({ "SurfaceTextureSpecular", brokenTilesSpecularSRV });
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(),
+		0,
+		textureSRVs.at("SurfaceTextureSpecular").GetAddressOf()
+	);
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> brokenTilesSampler;
+	samplerOptions.insert({ "BasicSampler", brokenTilesSampler });
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 16;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	device->CreateSamplerState(&samplerDesc, samplerOptions.begin()->second.GetAddressOf());
+
 	//(0) Create White Material
 	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.051f, vertexShader, pixelShaders[0]));
 	
@@ -94,21 +138,24 @@ void Game::Init() {
 	directionalLight1 = {};
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight1.Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
-	directionalLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	//directionalLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	directionalLight1.Intensity = 1.0f;
 
 	//Yellow light pointing left and down
 	directionalLight2 = {};
 	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight2.Direction = DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f);
-	directionalLight2.Color = DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//directionalLight2.Color = DirectX::XMFLOAT3(1.0f, 1.0f, 0.0f);
 	directionalLight2.Intensity = 1.0f;
 
 	//Teal light pointing up and left and forwards
 	directionalLight3 = {};
 	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight3.Direction = DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f);
-	directionalLight3.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 1.0f);
+	//directionalLight3.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 1.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	directionalLight3.Intensity = 1.0f;
 
 	//Purple point light
@@ -116,7 +163,8 @@ void Game::Init() {
 	pointLight1.Type = LIGHT_TYPE_POINT;
 	pointLight1.Range = 10.0f;
 	pointLight1.Position = DirectX::XMFLOAT3(-3.0f, 1.0f, -5.0f);
-	pointLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 1.0f);
+	//pointLight1.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 1.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	pointLight1.Intensity = 1.0f;
 
 	//Green point light
@@ -124,7 +172,8 @@ void Game::Init() {
 	pointLight2.Type = LIGHT_TYPE_POINT;
 	pointLight2.Range = 10.0f;
 	pointLight2.Position = DirectX::XMFLOAT3(0.0f, 5.0f, 0.0f);
-	pointLight2.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+	//pointLight2.Color = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+	directionalLight1.Color = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	pointLight2.Intensity = 1.0f;
 
 	//Add lights to lights vector
@@ -315,7 +364,7 @@ void Game::Update(float deltaTime, float totalTime) {
 	entities[4]->GetTransform()->SetPosition(0.0f, sin(totalTime), 0.0f);*/
 
 	for (std::shared_ptr<Entity> entity : entities) {
-		entity->GetTransform()->Rotate(0.0f, 1.0f * deltaTime, 0.0f);
+		entity->GetTransform()->Rotate(0.0f, 0.25f * deltaTime, 0.0f);
 	}
 
 	//Update the selected camera
@@ -549,6 +598,10 @@ void Game::Draw(float deltaTime, float totalTime) {
 		entity->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 
 		entity->GetMaterial()->GetPixelShader()->SetData("lights", lights[0], sizeof(Light) * (int)lights.size());
+
+		/*entity->GetMaterial()->GetPixelShader()->SetShaderResourceView("SurfaceTexture", textureSRV);
+		entity->GetMaterial()->GetPixelShader()->SetSamplerState("BasicSampler", samplerOptions);*/
+		entity->GetMaterial()->PrepareMaterial(textureSRVs, samplerOptions);
 
 		entity->Draw(context, cameras[selectedCameraIndex], totalTime);
 		
