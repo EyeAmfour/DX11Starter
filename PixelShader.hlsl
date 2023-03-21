@@ -12,6 +12,7 @@ cbuffer ExternalData : register(b0) {
 
 Texture2D SurfaceTexture : register(t0); // "t" registers for textures
 Texture2D SurfaceTextureSpecular : register(t1);
+Texture2D NormalMap : register(t2);
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 // --------------------------------------------------------
@@ -27,6 +28,22 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	//Normalize the incoming normal
 	input.normal = normalize(input.normal);
+	//input.normal = normalize(input.tangent);
+
+	//Handle normal mapping
+	float3 normalFromMap = normalize(NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1);
+	//input.normal = normalFromMap;
+
+	//Rotate the normal map to convert from TANGENT to WORLD space
+	//Ensure we "orthonormalize" the tangent again
+	float3 N = input.normal;
+	float3 T = normalize(input.tangent - N * dot(N, input.tangent));
+	float3 B = cross(T, N);
+
+	float3 TBN = float3x3(T, B, N);
+
+	//Multiply the normal map vector by the TBN
+	input.normal = mul(normalFromMap, TBN);
 
 	//float3 CalculateLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness)
 

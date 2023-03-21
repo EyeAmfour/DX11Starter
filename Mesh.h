@@ -20,6 +20,7 @@ private:
 
 	void CreateVertexBuffer(Vertex* vertices, int numVerts, Microsoft::WRL::ComPtr<ID3D11Device> device);
 	void CreateIndexBuffer(unsigned int* indices, int numIndices, Microsoft::WRL::ComPtr<ID3D11Device> device);
+	void CreateTangents(Vertex* vertices, int numVerts, unsigned int* indices, int numIndices);
 
 public:
 	//Constructor
