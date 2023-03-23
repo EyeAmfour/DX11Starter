@@ -42,7 +42,7 @@ VertexToPixel main( VertexShaderInput input)
 	//Set the world position
 	output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
 
-	output.tangent = input.tangent;
+	output.tangent = mul((float3x3)world, input.tangent);
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)
