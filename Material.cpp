@@ -62,17 +62,14 @@ void Material::SetPixelShader(std::shared_ptr<SimplePixelShader> ps) {
 }
 
 void Material::AddTextureSRV(std::string name, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv) {
-    pixelShader->SetShaderResourceView(name, srv);
+    textureSRVs.insert({ name, srv });
 }
 
 void Material::AddSampler(std::string name, Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState) {
-    pixelShader->SetSamplerState(name, samplerState);
+    samplerOptions.insert({ name, samplerState });
 }
 
-void Material::PrepareMaterial(
-    std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> srvs, 
-    std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplers
-) {
-    for (auto& t : srvs) { pixelShader->SetShaderResourceView(t.first.c_str(), t.second); }
-    for (auto& s : samplers) { pixelShader->SetSamplerState(s.first.c_str(), s.second); }
+void Material::PrepareMaterial() {
+    for (auto& t : textureSRVs) { pixelShader->SetShaderResourceView(t.first.c_str(), t.second); }
+    for (auto& s : samplerOptions) { pixelShader->SetSamplerState(s.first.c_str(), s.second); }
 }

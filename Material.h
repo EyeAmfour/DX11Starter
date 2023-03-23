@@ -14,6 +14,10 @@ private:
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	std::shared_ptr<SimplePixelShader> pixelShader;
 
+	//Texture fields
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureSRVs;
+	std::unordered_map <std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplerOptions;
+
 public:
 	//Constructor/Destructor
 	Material(DirectX::XMFLOAT4 tint, float roughness, std::shared_ptr<SimpleVertexShader> vs, std::shared_ptr<SimplePixelShader> ps);
@@ -34,9 +38,6 @@ public:
 	void AddTextureSRV(std::string name, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv);
 	void AddSampler(std::string name, Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState);
 
-	void PrepareMaterial(
-		std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> srvs,
-		std::unordered_map <std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplers
-	);
+	void PrepareMaterial();
 };
 

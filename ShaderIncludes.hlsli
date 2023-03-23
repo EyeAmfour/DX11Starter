@@ -1,7 +1,6 @@
 #ifndef __GGP_SHADER_INCLUDES__ // Each .hlsli file needs a unique identifier!
 #define __GGP_SHADER_INCLUDES__
 // ALL of your code pieces (structs, functions, etc.) go here!
-#endif
 
 #define LIGHT_TYPE_DIRECTIONAL 0
 #define LIGHT_TYPE_POINT 1
@@ -18,6 +17,7 @@ struct VertexShaderInput {
 	float3 localPosition	: POSITION;     // XYZ position
 	float3 normal			: NORMAL;
 	float2 uv				: TEXCOORD;
+	float3 tangent			: TANGENT;
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -31,17 +31,23 @@ struct VertexToPixel {
 	float2 uv				: TEXCOORD;
 	float3 normal			: NORMAL;
 	float3 worldPosition	: POSITION;
+	float3 tangent			: TANGENT;
+};
+
+struct VertexToPixel_Sky {
+	float4 position			: SV_POSITION;
+	float3 sampleDir		: DIRECTION;
 };
 
 //Light struct
 struct Light {
-	int Type			: L_TYPE;
+	int Type : L_TYPE;
 	float3 Direction	: L_DIRECTION;
-	float Range			: L_RANGE;
+	float Range : L_RANGE;
 	float3 Position		: L_POSITION;
-	float Intensity		: L_INTENSITY;
+	float Intensity : L_INTENSITY;
 	float3 Color		: L_COLOR;
-	float SpotFalloff	: L_FALLOFF;
+	float SpotFalloff : L_FALLOFF;
 	float3 Padding		: L_PADDING;
 };
 
@@ -86,6 +92,7 @@ float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surf
 	float3 V = normalize(cameraPos - worldPos);
 	float3 R = reflect(incomingLightDirection, normal);
 	float spec = Specular(R, V, roughness) * specTex;
+	spec *= any(diffuse);
 
 	return surfaceColor.xyz * (finalColor + spec);
 }
@@ -104,9 +111,11 @@ float3 CalculatePointLight(Light incomingLight, float3 normal, float4 surfaceCol
 	float3 V = normalize(cameraPos - worldPos);
 	float3 R = reflect(light.Direction, normal);
 	float spec = Specular(R, V, roughness) * specTex;
+	spec *= any(diffuse);
 
 	float3 l = surfaceColor.xyz * (finalColor + spec);
 	float attenuation = Attenuate(light, worldPos);
 
 	return l * attenuation;
 }
+#endif

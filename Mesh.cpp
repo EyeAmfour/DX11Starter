@@ -3,6 +3,8 @@
 #include <vector>
 #include <DirectXMath.h>
 
+using namespace DirectX;
+
 void Mesh::CreateVertexBuffer(Vertex* vertices, int numVerts, Microsoft::WRL::ComPtr<ID3D11Device> device) {
 	// First, we need to describe the buffer we want Direct3D to make on the GPU
 	D3D11_BUFFER_DESC vbd = {};
@@ -39,12 +41,22 @@ void Mesh::CreateIndexBuffer(unsigned int* indices, int numIndices, Microsoft::W
 	device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
 }
 
-void Mesh::CreateTangents(Vertex* vertices, int numVerts, unsigned int* indices, int numIndices) {
+// --------------------------------------------------------
+// Calculates the tangents of the vertices in a mesh
+// - Code originally adapted from: http://www.terathon.com/code/tangent.html
+// - Updated version found here: http://foundationsofgameenginedev.com/FGED2-sample.pdf
+// - See listing 7.4 in section 7.5 (page 9 of the PDF)
+//
+// - Note: For this code to work, your Vertex format must
+// contain an XMFLOAT3 called Tangent
+//
+// - Be sure to call this BEFORE creating your D3D vertex/index buffers
+// --------------------------------------------------------
+void Mesh::CalculateTangents(Vertex* vertices, int numVerts, unsigned int* indices, int numIndices) {
 	// Reset tangents
 	for (int i = 0; i < numVerts; i++) {
-		vertices[i].Tangent = DirectX::XMFLOAT3(0, 0, 0);
+		vertices[i].Tangent = XMFLOAT3(0, 0, 0);
 	}
-
 	// Calculate tangents one whole triangle at a time
 	for (int i = 0; i < numIndices;) {
 		// Grab indices and vertices of first triangle
@@ -82,18 +94,17 @@ void Mesh::CreateTangents(Vertex* vertices, int numVerts, unsigned int* indices,
 		v3->Tangent.y += ty;
 		v3->Tangent.z += tz;
 	}
-
 	// Ensure all of the tangents are orthogonal to the normals
 	for (int i = 0; i < numVerts; i++) {
 		// Grab the two vectors
-		DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&vertices[i].Normal);
-		DirectX::XMVECTOR tangent = DirectX::XMLoadFloat3(&vertices[i].Tangent);
+		XMVECTOR normal = XMLoadFloat3(&vertices[i].Normal);
+		XMVECTOR tangent = XMLoadFloat3(&vertices[i].Tangent);
 		// Use Gram-Schmidt orthonormalize to ensure
 		// the normal and tangent are exactly 90 degrees apart
-		tangent = DirectX::XMVector3Normalize(
-			tangent - normal * DirectX::XMVector3Dot(normal, tangent));
+		tangent = XMVector3Normalize(
+			tangent - normal * XMVector3Dot(normal, tangent));
 		// Store the tangent
-		DirectX::XMStoreFloat3(&vertices[i].Tangent, tangent);
+		XMStoreFloat3(&vertices[i].Tangent, tangent);
 	}
 }
 
@@ -106,7 +117,7 @@ Mesh::Mesh(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 	: context(context) {
 
-	CreateTangents(vertices, numVerts, indices, numIndices);
+	CalculateTangents(vertices, numVerts, indices, numIndices);
 
 	CreateVertexBuffer(vertices, numVerts, device);
 	CreateIndexBuffer(indices, numIndices, device);
@@ -116,7 +127,7 @@ Mesh::Mesh(
 }
 
 Mesh::Mesh(const wchar_t* fileToLoad, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) : context(context) {
-	numIndices = 0.0f;
+	numIndices = 0;
 	meshTint = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	DirectX::XMStoreFloat4x4(&meshWorldMatrix, DirectX::XMMatrixIdentity());
 
@@ -325,6 +336,8 @@ Mesh::Mesh(const wchar_t* fileToLoad, Microsoft::WRL::ComPtr<ID3D11Device> devic
 	//    and detect duplicate vertices, but at that point it would be better to use a more
 	//    sophisticated model loading library like TinyOBJLoader or The Open Asset Importer Library
 	numIndices = indexCounter;
+
+	CalculateTangents(&verts[0], vertCounter, &indices[0], numIndices);
 
 	CreateVertexBuffer(&verts[0], vertCounter, device);
 	CreateIndexBuffer(&indices[0], indexCounter, device);

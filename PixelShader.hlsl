@@ -31,19 +31,19 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//input.normal = normalize(input.tangent);
 
 	//Handle normal mapping
-	float3 normalFromMap = normalize(NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1);
+	float3 unpackedNormal = normalize(NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1);
 	//input.normal = normalFromMap;
 
 	//Rotate the normal map to convert from TANGENT to WORLD space
 	//Ensure we "orthonormalize" the tangent again
-	float3 N = input.normal;
-	float3 T = normalize(input.tangent - N * dot(N, input.tangent));
+	float3 N = normalize(input.normal); // Must be normalized here or before
+	float3 T = normalize(input.tangent); // Must be normalized here or before
+	T = normalize(T - N * dot(T, N)); // Gram-Schmidt assumes T&N are normalized!
 	float3 B = cross(T, N);
-
-	float3 TBN = float3x3(T, B, N);
+	float3x3 TBN = float3x3(T, B, N);
 
 	//Multiply the normal map vector by the TBN
-	input.normal = mul(normalFromMap, TBN);
+	input.normal = mul(unpackedNormal, TBN);
 
 	//float3 CalculateLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 ambient, float3 cameraPos, float3 worldPos, float roughness)
 

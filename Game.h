@@ -10,6 +10,7 @@
 #include "Entity.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "Sky.h"
 
 #include "SimpleShader.h"
 #include "Material.h"
@@ -35,6 +36,9 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders(); 
+	void CreateMaterials();
+	void CreateSky();
+	void CreateLights();
 	void CreateGeometry();
 	void UpdateGui(float deltaTime);
 
@@ -53,7 +57,7 @@ private:
 	
 	// Shaders and shader-related constructs
 	std::vector<std::shared_ptr<SimplePixelShader>> pixelShaders;
-	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::vector<std::shared_ptr<SimpleVertexShader>> vertexShaders;
 
 	//Mesh Assignment variables
 	std::vector<std::shared_ptr<Entity>> entities;
@@ -75,8 +79,7 @@ private:
 	Light pointLight1;
 	Light pointLight2;
 
-	//Texture fields
-	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textureSRVs;
-	std::unordered_map <std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> samplerOptions;
+	//Sky fields
+	std::shared_ptr<Sky> sky;
 };
 
