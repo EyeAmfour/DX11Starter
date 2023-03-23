@@ -416,11 +416,11 @@ void Game::CreateGeometry() {
 	////(4) Double Sided Quad Mesh
 	//meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/quad_double_sided.obj").c_str(), device, context));
 
-	////(5) Sphere Mesh
+	//(5) Sphere Mesh
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context));
 
-	//(6) Torus Mesh
-	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
+	////(6) Torus Mesh
+	//meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
 	//Create entities using the meshes and materials
 	//(0) Cube Entity
@@ -448,7 +448,7 @@ void Game::CreateGeometry() {
 	entities[1]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
 
 	//(6) Torus Entity
-	entities.push_back(std::make_shared<Entity>(meshes[3], materials[2]));
+	entities.push_back(std::make_shared<Entity>(meshes[0], materials[2]));
 	entities[2]->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);
 
 }

@@ -132,6 +132,7 @@ Sky::Sky(
     //Create the Depth-Stencil State
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
     depthStencilDesc.DepthEnable = true;
+	//depthStencilDesc.StencilWriteMask = D3D10_DEPTH_WRITE_MASK_ALL;
     depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     device->CreateDepthStencilState(&depthStencilDesc, depthStencilState.GetAddressOf());
