@@ -43,8 +43,10 @@ Game::Game(HINSTANCE hInstance)
 	//Set initial selected camera
 	selectedCameraIndex = 0;
 
+	//Pink ambient color
+	ambientColor = DirectX::XMFLOAT3(0.03f, 0.015f, 0.03f);
+
 	//Set initial light variables
-	ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	directionalLight1 = {};
 	directionalLight2 = {};
 	directionalLight3 = {};
@@ -88,7 +90,7 @@ void Game::Init() {
 	CreateSky();
 
 	//ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.25f);
-	ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	CreateLights();
 
@@ -673,7 +675,7 @@ void Game::CreateInspectorGui() {
 
 	//Create the root node for lights
 	if (ImGui::TreeNode("Lights")) {
-		ImGui::DragFloat3("Ambient Light", &ambientColor.x, 0.005f);
+		ImGui::ColorEdit3("Ambient Light", &ambientColor.x, 0.005f);
 
 		int index = 0;
 
