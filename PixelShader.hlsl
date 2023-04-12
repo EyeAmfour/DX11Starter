@@ -71,8 +71,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 				break;
 
 			case 1:
-				//finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specular);
-				return float4(1, 0, 0, 1);
+				finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specularColor);
 				break;
 
 			case 2:
