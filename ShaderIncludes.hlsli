@@ -41,6 +41,7 @@ struct VertexToPixel {
 	float3 normal			: NORMAL;
 	float3 worldPosition	: POSITION;
 	float3 tangent			: TANGENT;
+	float4 shadowMapPos		: SHADOW_POSITION;
 };
 
 struct VertexToPixel_Sky {
@@ -201,7 +202,7 @@ float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surf
 	float3 balancedDiff = DiffuseEnergyConserve(diffuse, F, metalness);
 
 	// Combine the final diffuse and specular values for this light
-	float3 total = (balancedDiff * surfaceColor + spec) * light.Intensity * light.Color;
+	float3 total = (balancedDiff * surfaceColor.xyz + spec) * light.Intensity * light.Color;
 
 	/*float3 R = reflect(incomingLightDirection, normal);
 	float spec = Specular(R, V, roughness) * specTex;

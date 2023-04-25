@@ -53,6 +53,11 @@ Game::Game(HINSTANCE hInstance)
 	directionalLight3 = {};
 	pointLight1 = {};
 	pointLight2 = {};
+
+	//Set initial shadow map variables
+	shadowMapResolution = 1024;
+	lightProjectionMatrix = XMFLOAT4X4();
+	lightViewMatrix = XMFLOAT4X4();
 }
 
 // --------------------------------------------------------
@@ -89,6 +94,8 @@ void Game::Init() {
 	CreateGeometry();
 
 	CreateSky();
+
+	CreateShadowMap();
 
 	//ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.25f);
 	//ambientColor = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -163,6 +170,10 @@ void Game::LoadShaders() {
 	//(1)
 	vertexShaders.push_back(std::make_shared<SimpleVertexShader>(device, context,
 		FixPath(L"SkyVertexShader.cso").c_str()));
+
+	//(2)
+	vertexShaders.push_back(std::make_shared<SimpleVertexShader>(device, context,
+		FixPath(L"ShadowMapVS.cso").c_str()));
 
 	//(0)
 	pixelShaders.push_back(std::make_shared<SimplePixelShader>(device, context,
@@ -470,60 +481,60 @@ void Game::CreateMaterials() {
 	device->CreateSamplerState(&samplerDesc, defaultSampler.GetAddressOf());
 
 	//(0) Create Bronze PBR Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[0]->AddTextureSRV("Albedo", bronzeAlbedoSRV);
-	materials[0]->AddTextureSRV("NormalMap", bronzeNormalSRV);
-	materials[0]->AddTextureSRV("RoughnessMap", bronzeRoughnessSRV);
-	materials[0]->AddTextureSRV("MetalnessMap", bronzeMetalSRV);
-	materials[0]->AddSampler("BasicSampler", defaultSampler);
+	//materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
+	//materials[0]->AddTextureSRV("Albedo", bronzeAlbedoSRV);
+	//materials[0]->AddTextureSRV("NormalMap", bronzeNormalSRV);
+	//materials[0]->AddTextureSRV("RoughnessMap", bronzeRoughnessSRV);
+	//materials[0]->AddTextureSRV("MetalnessMap", bronzeMetalSRV);
+	//materials[0]->AddSampler("BasicSampler", defaultSampler);
 
 	//(1) Create Cobblestone PBR Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[1]->AddTextureSRV("Albedo", cobbleAlbedoSRV);
-	materials[1]->AddTextureSRV("NormalMap", cobbleNormalSRV);
-	materials[1]->AddTextureSRV("RoughnessMap", cobbleRoughnessSRV);
-	materials[1]->AddTextureSRV("MetalnessMap", cobbleMetalSRV);
-	materials[1]->AddSampler("BasicSampler", defaultSampler);
+	//materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
+	//materials[1]->AddTextureSRV("Albedo", cobbleAlbedoSRV);
+	//materials[1]->AddTextureSRV("NormalMap", cobbleNormalSRV);
+	//materials[1]->AddTextureSRV("RoughnessMap", cobbleRoughnessSRV);
+	//materials[1]->AddTextureSRV("MetalnessMap", cobbleMetalSRV);
+	//materials[1]->AddSampler("BasicSampler", defaultSampler);
 
 	//(2) Create Floor PBR Material
-	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[2]->AddTextureSRV("Albedo", floorAlbedoSRV);
-	materials[2]->AddTextureSRV("NormalMap", floorNormalSRV);
-	materials[2]->AddTextureSRV("RoughnessMap", floorRoughnessSRV);
-	materials[2]->AddTextureSRV("MetalnessMap", floorMetalSRV);
-	materials[2]->AddSampler("BasicSampler", defaultSampler);
+	//materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
+	//materials[2]->AddTextureSRV("Albedo", floorAlbedoSRV);
+	//materials[2]->AddTextureSRV("NormalMap", floorNormalSRV);
+	//materials[2]->AddTextureSRV("RoughnessMap", floorRoughnessSRV);
+	//materials[2]->AddTextureSRV("MetalnessMap", floorMetalSRV);
+	//materials[2]->AddSampler("BasicSampler", defaultSampler);
 
 	//(3) Create Paint PBR Material
 	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[3]->AddTextureSRV("Albedo", paintAlbedoSRV);
-	materials[3]->AddTextureSRV("NormalMap", paintNormalSRV);
-	materials[3]->AddTextureSRV("RoughnessMap", paintRoughnessSRV);
-	materials[3]->AddTextureSRV("MetalnessMap", paintMetalSRV);
-	materials[3]->AddSampler("BasicSampler", defaultSampler);
+	materials[0]->AddTextureSRV("Albedo", paintAlbedoSRV);
+	materials[0]->AddTextureSRV("NormalMap", paintNormalSRV);
+	materials[0]->AddTextureSRV("RoughnessMap", paintRoughnessSRV);
+	materials[0]->AddTextureSRV("MetalnessMap", paintMetalSRV);
+	materials[0]->AddSampler("BasicSampler", defaultSampler);
 
 	//(4) Create Rough PBR Material
 	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[4]->AddTextureSRV("Albedo", roughAlbedoSRV);
-	materials[4]->AddTextureSRV("NormalMap", roughNormalSRV);
-	materials[4]->AddTextureSRV("RoughnessMap", roughRoughnessSRV);
-	materials[4]->AddTextureSRV("MetalnessMap", roughMetalSRV);
-	materials[4]->AddSampler("BasicSampler", defaultSampler);
+	materials[1]->AddTextureSRV("Albedo", roughAlbedoSRV);
+	materials[1]->AddTextureSRV("NormalMap", roughNormalSRV);
+	materials[1]->AddTextureSRV("RoughnessMap", roughRoughnessSRV);
+	materials[1]->AddTextureSRV("MetalnessMap", roughMetalSRV);
+	materials[1]->AddSampler("BasicSampler", defaultSampler);
 
 	//(5) Create Scratched PBR Material
 	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[5]->AddTextureSRV("Albedo", scratchedAlbedoSRV);
-	materials[5]->AddTextureSRV("NormalMap", scratchedNormalSRV);
-	materials[5]->AddTextureSRV("RoughnessMap", scratchedRoughnessSRV);
-	materials[5]->AddTextureSRV("MetalnessMap", scratchedMetalSRV);
-	materials[5]->AddSampler("BasicSampler", defaultSampler);
+	materials[2]->AddTextureSRV("Albedo", scratchedAlbedoSRV);
+	materials[2]->AddTextureSRV("NormalMap", scratchedNormalSRV);
+	materials[2]->AddTextureSRV("RoughnessMap", scratchedRoughnessSRV);
+	materials[2]->AddTextureSRV("MetalnessMap", scratchedMetalSRV);
+	materials[2]->AddSampler("BasicSampler", defaultSampler);
 
 	//(6) Create Wood PBR Material
 	materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.1f, vertexShaders[0], pixelShaders[0]));
-	materials[6]->AddTextureSRV("Albedo", woodAlbedoSRV);
-	materials[6]->AddTextureSRV("NormalMap", woodNormalSRV);
-	materials[6]->AddTextureSRV("RoughnessMap", woodRoughnessSRV);
-	materials[6]->AddTextureSRV("MetalnessMap", woodMetalSRV);
-	materials[6]->AddSampler("BasicSampler", defaultSampler);
+	materials[3]->AddTextureSRV("Albedo", woodAlbedoSRV);
+	materials[3]->AddTextureSRV("NormalMap", woodNormalSRV);
+	materials[3]->AddTextureSRV("RoughnessMap", woodRoughnessSRV);
+	materials[3]->AddTextureSRV("MetalnessMap", woodMetalSRV);
+	materials[3]->AddSampler("BasicSampler", defaultSampler);
 }
 
 void Game::CreateSky() {
@@ -568,9 +579,9 @@ void Game::CreateLights() {
 	//Directional light pointing right
 	directionalLight1 = {};
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight1.Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight1.Direction = DirectX::XMFLOAT3(0.6f, -1.0f, 1.15f);
 	directionalLight1.Color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
-	directionalLight1.Intensity = 2.0f;
+	directionalLight1.Intensity = 0.5f;
 
 	//Directional light pointing down
 	//directionalLight2 = {};
@@ -594,6 +605,27 @@ void Game::CreateLights() {
 	lights.push_back(&directionalLight3);
 	lights.push_back(&pointLight1);
 	lights.push_back(&pointLight2);
+
+	XMMATRIX lightView = XMMatrixLookToLH(
+		-DirectX::XMLoadFloat3(&directionalLight1.Direction) * 20,	// Position: "Backing up" 20 units from origin
+		DirectX::XMLoadFloat3(&directionalLight1.Direction),		// Direction: light's direction
+		XMVectorSet(0, 1, 0, 0));									// Up: World up vector (Y axis)
+
+	float lightProjectionSize = 15.0f; // Tweak for your scene!
+	XMMATRIX lightProjection = XMMatrixOrthographicLH(
+		lightProjectionSize,
+		lightProjectionSize,
+		1.0f,
+		100.0f);
+
+	DirectX::XMStoreFloat4x4(&lightViewMatrix, lightView);
+	DirectX::XMStoreFloat4x4(&lightProjectionMatrix, lightProjection);
+
+	//Send the texture data to all materials
+	for (std::shared_ptr<Material> material : materials) {
+		material->AddTextureSRV("ShadowMap", shadowSRV);
+		material->AddSampler("ShadowSampler", shadowSampler);
+	}
 }
 
 
@@ -641,52 +673,80 @@ void Game::CreateGeometry() {
 	//meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
 	//Create entities using the meshes and materials
-	//(0) Cube Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[0], materials[2]));
-	//entities[0]->GetTransform()->SetPosition(-9.0f, 0.0f, 0.0f);
+	//Floor
+	entities.push_back(std::make_shared<Entity>(meshes[0], materials[3]));
+	entities[0]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
+	entities[0]->GetTransform()->SetScale(25.0f, 0.01f, 25.0f);
 
-	////(1) Cylinder Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[1], materials[1]));
-	//entities[1]->GetTransform()->SetPosition(-6.0f, 0.0f, 0.0f);
-
-	//(2) Helix Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[1], materials[1]));
-	//entities[0]->GetTransform()->SetPosition(-5.0f, 0.0f, 0.0f);
-
-	////(3) Quad Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[3], materials[1]));
-	//entities[3]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
-
-	////(4) Double Sided Quad Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[4], materials[1]));
-	//entities[4]->GetTransform()->SetPosition(3.0f, 0.0f, 0.0f);
-
-	////(5) Sphere Entity
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[0]));
-	entities[0]->GetTransform()->SetPosition(-9.0f, 0.0f, 0.0f);
-
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[1]));
-	entities[1]->GetTransform()->SetPosition(-6.0f, 0.0f, 0.0f);
-
+	//Sphere Entity
 	entities.push_back(std::make_shared<Entity>(meshes[2], materials[2]));
-	entities[2]->GetTransform()->SetPosition(-3.0f, 0.0f, 0.0f);
+	entities[1]->GetTransform()->SetPosition(-5.0f, 1.25f, 0.0f);
 
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[3]));
-	entities[3]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
+	//Helix Entity
+	entities.push_back(std::make_shared<Entity>(meshes[1], materials[0]));
+	entities[2]->GetTransform()->SetPosition(0.0f, 1.25f, 0.0f);
 
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[4]));
-	entities[4]->GetTransform()->SetPosition(3.0f, 0.0f, 0.0f);
+	//Cube Entity
+	entities.push_back(std::make_shared<Entity>(meshes[0], materials[1]));
+	entities[3]->GetTransform()->SetPosition(5.0f, 1.25f, 0.0f);
+}
 
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[5]));
-	entities[5]->GetTransform()->SetPosition(6.0f, 0.0f, 0.0f);
+void Game::CreateShadowMap() {
+	// Create the actual texture that will be the shadow map
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.Height = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
 
-	entities.push_back(std::make_shared<Entity>(meshes[2], materials[6]));
-	entities[6]->GetTransform()->SetPosition(9.0f, 0.0f, 0.0f);
+	// Create the depth/stencil view
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSDesc.Texture2D.MipSlice = 0;
+	device->CreateDepthStencilView(
+		shadowTexture.Get(),
+		&shadowDSDesc,
+		shadowDSV.GetAddressOf());
 
-	//(6) Torus Entity
-	//entities.push_back(std::make_shared<Entity>(meshes[0], materials[2]));
-	//entities[2]->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);
+	// Create the SRV for the shadow map
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	device->CreateShaderResourceView(
+		shadowTexture.Get(),
+		&srvDesc,
+		shadowSRV.GetAddressOf());
 
+	//Create rasterizer state for depth biasing (fixes shadow acne)
+	D3D11_RASTERIZER_DESC shadowRastDesc = {};
+	shadowRastDesc.FillMode = D3D11_FILL_SOLID;
+	shadowRastDesc.CullMode = D3D11_CULL_BACK;
+	shadowRastDesc.DepthClipEnable = true;
+	shadowRastDesc.DepthBias = 1000; // Min. precision units, not world units!
+	shadowRastDesc.SlopeScaledDepthBias = 1.0f; // Bias more based on slope
+	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
+
+	//Create sampler for comparison
+	D3D11_SAMPLER_DESC shadowSampDesc = {};
+	shadowSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	shadowSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadowSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.BorderColor[0] = 1.0f; // Only need the first component
+	device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
 }
 
 
@@ -717,14 +777,11 @@ void Game::Update(float deltaTime, float totalTime) {
 	CreateInspectorGui();
 
 	//Apply transformations to entities
-	/*entities[0]->GetTransform()->SetScale((sin(totalTime) + 2.0f) / 2.0f, (sin(totalTime) + 2.0f) / 2.0f, 0.0f);
-	entities[1]->GetTransform()->SetPosition(sin(totalTime), 0.0f, 0.0f);
-	entities[2]->GetTransform()->Rotate(0.0f, 0.0f, 1.0f * deltaTime);
-	entities[4]->GetTransform()->SetPosition(0.0f, sin(totalTime), 0.0f);*/
-
-	for (std::shared_ptr<Entity> entity : entities) {
-		entity->GetTransform()->Rotate(0.0f, 0.25f * deltaTime, 0.0f);
-	}
+	//entities[0]->GetTransform()->SetScale((sin(totalTime) + 2.0f) / 2.0f, (sin(totalTime) + 2.0f) / 2.0f, 0.0f);
+	entities[1]->GetTransform()->MoveAbsolute(0.0f, sin(totalTime) * 0.001f, 0.0f);
+	entities[2]->GetTransform()->MoveAbsolute(0.0f, sin(totalTime) * 0.001f, 0.0f);
+	entities[2]->GetTransform()->Rotate(0.0f, 1.0f * deltaTime, 0.0f);
+	entities[3]->GetTransform()->MoveAbsolute(0.0f, sin(totalTime) * 0.001f, 0.0f);
 
 	//Update the selected camera
 	cameras[selectedCameraIndex]->Update(deltaTime);
@@ -917,7 +974,14 @@ void Game::CreateInspectorGui() {
 		for (Light* light : lights) {
 			if (ImGui::TreeNode((void*)(intptr_t)index, "Light %d", index)) {
 				ImGui::Text("Type: %s", (light->Type == 0 ? "Directional" : (light->Type == 1 ? "Point" : "Spot")));
-				ImGui::DragFloat3("Direction", &light->Direction.x, 0.005f);
+				if (ImGui::DragFloat3("Direction", &light->Direction.x, 0.005f)) {
+					XMMATRIX lightView = XMMatrixLookToLH(
+						-DirectX::XMLoadFloat3(&light->Direction) * 20,	// Position: "Backing up" 20 units from origin
+						DirectX::XMLoadFloat3(&light->Direction),		// Direction: light's direction
+						XMVectorSet(0, 1, 0, 0));						// Up: World up vector (Y axis)
+
+					DirectX::XMStoreFloat4x4(&lightViewMatrix, lightView);
+				}
 				ImGui::DragFloat("Range", &light->Range, 0.005f);
 				ImGui::DragFloat3("Position", &light->Position.x, 0.005f);
 				ImGui::DragFloat("Intensity", &light->Intensity, 0.005f);
@@ -933,6 +997,9 @@ void Game::CreateInspectorGui() {
 		ImGui::TreePop();
 	}
 
+	//Shadow Map Inspector
+	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
+
 	ImGui::End();
 }
 
@@ -940,6 +1007,54 @@ void Game::CreateInspectorGui() {
 // Clear the screen, redraw everything, present to the user
 // --------------------------------------------------------
 void Game::Draw(float deltaTime, float totalTime) {
+
+	//Clear the shadow map
+	context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	//Set up output merger stage
+	ID3D11RenderTargetView* nullRTV{};
+	context->OMSetRenderTargets(1, &nullRTV, shadowDSV.Get());
+
+	//Deactivate pixel shader
+	context->PSSetShader(0, 0, 0);
+
+	//Change viewport
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = (float)shadowMapResolution;
+	viewport.Height = (float)shadowMapResolution;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+
+	//Before rendering shadow map, enable rasterizer state
+	context->RSSetState(shadowRasterizer.Get());
+
+	//Entity render loop
+	vertexShaders[2]->SetShader();
+	vertexShaders[2]->SetMatrix4x4("view", lightViewMatrix);
+	vertexShaders[2]->SetMatrix4x4("projection", lightProjectionMatrix);
+
+	// Loop and draw all entities
+	for (auto& e : entities) {
+		vertexShaders[2]->SetMatrix4x4("world", e->GetTransform()->GetWorldMatrix());
+		vertexShaders[2]->CopyAllBufferData();
+
+		// Draw the mesh directly to avoid the entity's material
+		// Note: Your code may differ significantly here!
+		e->GetMesh()->Draw();
+	}
+
+	//Disable shadow map rasterizer state
+	context->RSSetState(0);
+
+	//Reset the pipeline
+	viewport.Width = (float)this->windowWidth;
+	viewport.Height = (float)this->windowHeight;
+	context->RSSetViewports(1, &viewport);
+	context->OMSetRenderTargets(
+		1,
+		backBufferRTV.GetAddressOf(),
+		depthBufferDSV.Get());
+
 	// Frame START
 	// - These things should happen ONCE PER FRAME
 	// - At the beginning of Game::Draw() before drawing *anything*
@@ -954,6 +1069,9 @@ void Game::Draw(float deltaTime, float totalTime) {
 
 	//Loop through the entity vector and draw the entities
 	for (std::shared_ptr<Entity> entity : entities) {
+		entity->GetMaterial()->GetVertexShader()->SetMatrix4x4("lightView", lightViewMatrix);
+		entity->GetMaterial()->GetVertexShader()->SetMatrix4x4("lightProjection", lightProjectionMatrix);
+
 		entity->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 
 		entity->GetMaterial()->GetPixelShader()->SetData("lights", lights[0], sizeof(Light) * (int)lights.size());
@@ -989,4 +1107,8 @@ void Game::Draw(float deltaTime, float totalTime) {
 		// Must re-bind buffers after presenting, as they become unbound
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
+
+	//Unbind SRVs (prevents shadow map SRV/Depth Buffer issue)
+	ID3D11ShaderResourceView* nullSRVs[128] = {};
+	context->PSSetShaderResources(0, 128, nullSRVs);
 }

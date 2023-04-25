@@ -14,7 +14,9 @@ Texture2D Albedo : register(t0); // "t" registers for textures
 Texture2D NormalMap : register(t1);
 Texture2D RoughnessMap : register(t2);
 Texture2D MetalnessMap : register(t3);
+Texture2D ShadowMap : register(t4);
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
+SamplerComparisonState ShadowSampler : register(s1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -27,6 +29,24 @@ SamplerState BasicSampler : register(s0); // "s" registers for samplers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	float3 finalLight;
+
+	// Perform the perspective divide (divide by W) ourselves
+	input.shadowMapPos /= input.shadowMapPos.w;
+
+	// Convert the normalized device coordinates to UVs for sampling
+	float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+	shadowUV.y = 1 - shadowUV.y; // Flip the Y
+
+	// Grab the distances we need: light-to-pixel and closest-surface
+	float distToLight = input.shadowMapPos.z;
+
+	// Get a ratio of comparison results using SampleCmpLevelZero()
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(
+		ShadowSampler,
+		shadowUV,
+		distToLight).r;
+
 	//Normalize the incoming normal
 	input.normal = normalize(input.normal);
 	//input.normal = normalize(input.tangent);
@@ -46,7 +66,6 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//Multiply the normal map vector by the TBN
 	input.normal = mul(unpackedNormal, TBN);
 
-	float3 finalLight;
 	//float specular = SurfaceTextureSpecular.Sample(BasicSampler, input.uv).r;
 	float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
 	float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
@@ -63,25 +82,35 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//Ensure ambient is 0 because it conflicts with PBR
 	/*ambient = float3(0, 0, 0);*/
 
+	float3 lightResult;
 	for (int i = 0; i < 5; i++) {
 		switch (lights[i].Type) {
 			case 0:
 				//float3 CalculateDirectionalLight(Light incomingLight, float3 normal, float4 surfaceColor, float3 cameraPos, float3 worldPos, float roughness, float metalness, float3 specularColor) {
-				finalLight += CalculateDirectionalLight(lights[i], input.normal, colorTint, cameraPosition, input.worldPosition, roughness, metalness, specularColor);
+				lightResult += CalculateDirectionalLight(lights[i], input.normal, colorTint, cameraPosition, input.worldPosition, roughness, metalness, specularColor);
+
+				// If this is the first light, apply the shadowing result
+				if (i == 0) {
+					lightResult *= shadowAmount;
+				}
+
 				break;
 
 			case 1:
-				finalLight += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specularColor);
+				lightResult += CalculatePointLight(lights[i], input.normal, colorTint, ambient, cameraPosition, input.worldPosition, roughness, specularColor);
 				break;
 
 			case 2:
-				finalLight += float3(0, 0, 0);
+				lightResult += float3(0, 0, 0);
 				break;
 
 			default:
-				finalLight += float3(0, 0, 0);
+				lightResult += float3(0, 0, 0);
 				break;
 		}
+
+		// Add this light's result to the total light for this pixel
+		finalLight += lightResult;
 	}
 
 	finalLight *= albedo;
