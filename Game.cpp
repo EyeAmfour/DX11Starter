@@ -209,7 +209,7 @@ void Game::CreateMaterials() {
 		defaultSpecularSRV.GetAddressOf()
 	);
 
-	//BRONZE PBR SRVs
+	/*//BRONZE PBR SRVs
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeAlbedoSRV;
 	CreateWICTextureFromFile(
 		device.Get(),
@@ -319,6 +319,7 @@ void Game::CreateMaterials() {
 		0,
 		floorRoughnessSRV.GetAddressOf()
 	);
+	*/
 
 	//PAINT PBR SRVs
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintAlbedoSRV;
