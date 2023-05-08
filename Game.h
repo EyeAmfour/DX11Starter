@@ -41,6 +41,8 @@ private:
 	void CreateLights();
 	void CreateGeometry();
 	void CreateShadowMap();
+	void CreatePostProcessResources();
+	void CreatePostProcessTexture();
 	void UpdateGui(float deltaTime);
 
 	//ImGui Window Creation Methods
@@ -91,5 +93,17 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+
+	//Post Processing fields
+	// Resources that are shared among all post processes
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+	// Resources that are tied to a particular post process
+	std::shared_ptr<SimplePixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV; // For rendering
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV; // For sampling
+
+	//Blur Fields
+	int blurRadius;
 };
 
